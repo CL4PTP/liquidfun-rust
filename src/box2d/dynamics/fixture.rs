@@ -25,7 +25,7 @@ impl Default for Filter {
             category_bits: 0x0001,
             mask_bits: 0xFFFF,
             group_index: 0
-        }		
+        }
 	}
 }
 
@@ -40,7 +40,7 @@ pub struct FixtureDef {
     /// Use this to store application specific fixture data.
     pub user_data: size_t,
 
-    /// The friction coefficient, usually in the range [0,1].    
+    /// The friction coefficient, usually in the range [0,1].
     pub friction: Float32,
 
     /// The restitution (elasticity) usually in the range [0,1].
@@ -106,13 +106,13 @@ impl Fixture {
         unsafe {
             return b2Fixture_GetShape(self.ptr);
         }
-    }    
+    }
 
     /// Get the next fixture in the parent body's fixture list.
     /// @return the next fixture.
     pub fn get_next(&self) -> Option<Fixture> {
         let ptr: *mut B2Fixture;
-        
+
         unsafe {
             ptr = b2Fixture_GetNext(self.ptr);
         }
@@ -121,7 +121,7 @@ impl Fixture {
             None
         } else {
             Some(Fixture { ptr: ptr })
-        }        
+        }
     }
 
 }

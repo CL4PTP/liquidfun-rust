@@ -35,10 +35,10 @@ pub struct BodyDef {
     /// The world angle of the body in radians.
     pub angle: Float32,
 
-    /// The linear velocity of the body's origin in world co-ordinates.    
+    /// The linear velocity of the body's origin in world co-ordinates.
     pub linear_velocity: Vec2,
 
-    /// The angular velocity of the body.    
+    /// The angular velocity of the body.
     pub angular_velocity: Float32,
 
     /// Linear damping is use to reduce the linear velocity. The damping parameter

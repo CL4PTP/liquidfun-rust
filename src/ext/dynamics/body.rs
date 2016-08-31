@@ -28,4 +28,3 @@ impl Iterator for BodyIterator {
 		self.body.clone()
 	}
 }
-

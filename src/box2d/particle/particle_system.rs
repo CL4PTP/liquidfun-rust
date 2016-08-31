@@ -183,12 +183,12 @@ impl ParticleSystem {
         unsafe {
             ParticleFlags::from_bits(b2ParticleSystem_GetParticleFlags(self.ptr, index))
         }
-    }    
+    }
 
     /// Get the next particle-system in the world's particle-system list.
     pub fn get_next(&self) -> Option<ParticleSystem> {
         let ptr: *mut B2ParticleSystem;
-        
+
         unsafe {
             ptr = b2ParticleSystem_GetNext(self.ptr);
         }

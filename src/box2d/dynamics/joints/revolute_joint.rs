@@ -48,13 +48,13 @@ pub struct RevoluteJointDef {
 
 	/// The maximum motor torque used to achieve the desired motor speed.
 	/// Usually in N-m.
-	pub max_motor_torque: Float32,	
+	pub max_motor_torque: Float32,
 }
 
 impl RevoluteJointDef {
 	pub fn new () -> (JointDef, RevoluteJointDef) {
 		(
-			JointDef { joint_type: JointType::RevoluteJoint, ..JointDef::default() }, 
+			JointDef { joint_type: JointType::RevoluteJoint, ..JointDef::default() },
 	    	RevoluteJointDef {
 				local_anchor_a: Vec2::zero(),
 				local_anchor_b: Vec2::zero(),
