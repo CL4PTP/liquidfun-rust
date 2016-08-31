@@ -105,12 +105,23 @@ extern {
     fn b2Body_CreateFixture_FromShape(this: *mut B2Body, shape: *const B2Shape, density: Float32) -> *mut B2Fixture;
     fn b2Body_CreateFixture(this: *mut B2Body, def: *mut FixtureDef) -> *mut B2Fixture;
     fn b2Body_GetAngle(this: *mut B2Body) -> Float32;
+	fn b2Body_GetWorldCenter(this: *const B2Body) -> &Vec2;
+	fn b2Body_GetLocalCenter(this: *const B2Body) -> &Vec2;
     fn b2Body_GetFixtureList(this: *mut B2Body) -> *mut B2Fixture;
     fn b2Body_GetNext(this: *mut B2Body) -> *mut B2Body;
     fn b2Body_GetPosition(this: *mut B2Body) -> &Vec2;
     fn b2Body_GetUserData(this: *const B2Body) -> usize;
     fn b2Body_GetWorld(this: *const B2Body) -> *mut B2World;
     fn b2Body_GetLocalPoint(this: *const B2Body, worldPoint: &Vec2) -> Vec2;
+	fn b2Body_SetLinearVelocity(this: *const B2Body, v: &Vec2);
+	fn b2Body_GetLinearVelocity(this: *const B2Body) -> &Vec2;
+	fn b2Body_SetAngularVelocity(this: *const B2Body, omega: Float32);
+	fn b2Body_GetAngularVelocity(this: *const B2Body) -> Float32;
+	fn b2Body_ApplyForce(this: *const B2Body, force: &Vec2, point: &Vec2, wake: bool);
+	fn b2Body_ApplyForceToCenter(this: *const B2Body, force: &Vec2, wake: bool);
+	fn b2Body_ApplyTorque(this: *const B2Body, torque: Float32, wake: bool);
+	fn b2Body_ApplyLinearImpulse(this: *const B2Body, impulse: &Vec2, point: &Vec2, wake: bool);
+	fn b2Body_ApplyAngularImpulse(this: *const B2Body, impulse: Float32, wake: bool);
 }
 
 /// A rigid body. These are created via b2World::CreateBody.
@@ -155,6 +166,18 @@ impl Body {
         }
     }
 
+	pub fn get_world_center(&self) -> &Vec2 {
+		unsafe {
+			b2Body_GetWorldCenter(self.ptr)
+		}
+	}
+
+	pub fn get_local_center(&self) -> &Vec2 {
+		unsafe {
+			b2Body_GetLocalCenter(self.ptr)
+		}
+	}
+
     /// Get the list of all fixtures attached to this body.
     pub fn get_fixture_list(&self) -> Option<Fixture> {
         let ptr;
@@ -167,12 +190,12 @@ impl Body {
         } else {
             Some(Fixture { ptr: ptr })
         }
-    }    
+    }
 
     /// Get the next body in the world's body list.
     pub fn get_next(&self) -> Option<Body> {
         let ptr: *mut B2Body;
-        
+
         unsafe {
             ptr = b2Body_GetNext(self.ptr);
         }
@@ -181,7 +204,7 @@ impl Body {
             None
         } else {
             Some(Body { ptr: ptr })
-        }        
+        }
     }
 
     /// Get the world body origin position.
@@ -211,5 +234,59 @@ impl Body {
             b2Body_GetLocalPoint(self.ptr, world_point)
         }
     }
+
+	pub fn set_linear_velocity(&self, v: &Vec2) {
+		unsafe {
+			b2Body_SetLinearVelocity(self.ptr, v);
+		}
+	}
+
+	pub fn get_linear_velocity(&self) -> &Vec2 {
+		unsafe {
+			b2Body_GetLinearVelocity(self.ptr)
+		}
+	}
+
+	pub fn set_angular_velocity(&self, omega: f32) {
+		unsafe {
+			b2Body_SetAngularVelocity(self.ptr, omega);
+		}
+	}
+
+	pub fn get_angular_velocity(&self) -> f32 {
+		unsafe {
+			b2Body_GetAngularVelocity(self.ptr)
+		}
+	}
+
+	pub fn apply_force(&self, force: &Vec2, point: &Vec2, wake: bool) {
+		unsafe {
+			b2Body_ApplyForce(self.ptr, force, point, wake);
+		}
+	}
+
+	pub fn apply_force_to_center(&self, force: &Vec2, wake: bool) {
+		unsafe {
+			b2Body_ApplyForceToCenter(self.ptr, force, wake);
+		}
+	}
+
+	pub fn apply_torque(&self, torque: f32, wake: bool) {
+		unsafe {
+			b2Body_ApplyTorque(self.ptr, torque, wake);
+		}
+	}
+
+	pub fn apply_linear_impulse(&self, impulse: &Vec2, point: &Vec2, wake: bool) {
+		unsafe {
+			b2Body_ApplyLinearImpulse(self.ptr, impulse, point, wake);
+		}
+	}
+
+	pub fn apply_angular_impulse(&self, impulse: f32, wake: bool) {
+		unsafe {
+			b2Body_ApplyAngularImpulse(self.ptr, impulse, wake);
+		}
+	}
 
 }
