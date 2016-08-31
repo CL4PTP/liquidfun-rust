@@ -11,7 +11,6 @@ extern {
 
 
 /// Small color object for each particle
-#[allow(raw_pointer_derive)]
 #[derive(Clone)]
 pub struct ParticleColor {
 	pub ptr: *mut B2ParticleColor

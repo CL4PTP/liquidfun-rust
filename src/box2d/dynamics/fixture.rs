@@ -84,7 +84,6 @@ extern {
 /// such as friction, collision filters, etc.
 /// Fixtures are created via b2Body::CreateFixture.
 /// @warning you cannot reuse fixtures.
-#[allow(raw_pointer_derive)]
 #[derive(Clone)]
 pub struct Fixture {
     pub ptr: *mut B2Fixture

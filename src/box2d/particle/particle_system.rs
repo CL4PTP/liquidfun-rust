@@ -142,7 +142,6 @@ extern {
     fn b2ParticleSystem_GetPositionBuffer(ps: *mut B2ParticleSystem) -> *mut Vec2;
 }
 
-#[allow(raw_pointer_derive)]
 #[derive(Clone)]
 pub struct ParticleSystem {
     pub ptr: *mut B2ParticleSystem
