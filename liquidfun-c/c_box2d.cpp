@@ -58,6 +58,7 @@
 #include "Box2D/Collision/Shapes/c_b2EdgeShape.cpp"
 #include "Box2D/Collision/Shapes/c_b2PolygonShape.cpp"
 #include "Box2D/Common/c_b2Math.cpp"
+#include "Box2D/Common/c_b2Settings.cpp"
 #include "Box2D/Dynamics/c_b2Body.cpp"
 #include "Box2D/Dynamics/c_b2Fixture.cpp"
 #include "Box2D/Dynamics/c_b2World.cpp"

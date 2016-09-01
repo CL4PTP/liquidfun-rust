@@ -6,3 +6,7 @@ pub type Int32 = c_int;
 pub type UInt16 = c_ushort;
 pub type UInt32 = c_uint;
 pub type UInt8 = c_uchar;
+
+extern {
+    pub static c_b2MaxPolygonVertices: ::box2d::common::settings::UInt32;
+}
