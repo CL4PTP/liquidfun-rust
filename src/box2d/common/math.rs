@@ -27,3 +27,16 @@ impl Vec2 {
 	}
 }
 
+#[repr(C)]
+#[derive(Debug, PartialEq, Default, Copy, Clone)]
+pub struct Rot {
+    s: Float32,
+    c: Float32,
+}
+
+#[repr(C)]
+#[derive(Debug, PartialEq, Default, Copy, Clone)]
+pub struct Transform {
+    pub p: Vec2,
+	pub q: Rot,
+}

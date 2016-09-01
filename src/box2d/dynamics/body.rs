@@ -1,8 +1,9 @@
-use libc::size_t;
+use libc::c_void;
 use std::mem::transmute;
+use std::ptr;
 use super::fixture::*;
 use super::super::collision::shapes::shape::*;
-use super::super::common::math::*;
+use super::super::common::math::{Vec2, Transform};
 use super::super::common::settings::*;
 use super::world::*;
 
@@ -72,16 +73,16 @@ pub struct BodyDef {
     pub active: bool,
 
     /// Use this to store application specific body data.
-    pub user_data: size_t,
+    pub user_data: *mut c_void,
 
     /// Scale the gravity applied to this body.
     pub gravity_scale : Float32,
 }
 
 impl Default for BodyDef {
-	fn default () -> BodyDef {
+	fn default() -> BodyDef {
     	BodyDef {
-	        user_data: 0,
+	        user_data: ptr::null_mut(),
 	        position: Vec2::default(),
 	        angle: 0.0,
 	        linear_velocity: Vec2::default(),
@@ -102,17 +103,15 @@ impl Default for BodyDef {
 pub enum B2Body {}
 
 extern {
-    fn b2Body_CreateFixture_FromShape(this: *mut B2Body, shape: *const B2Shape, density: Float32) -> *mut B2Fixture;
-    fn b2Body_CreateFixture(this: *mut B2Body, def: *mut FixtureDef) -> *mut B2Fixture;
-    fn b2Body_GetAngle(this: *mut B2Body) -> Float32;
+	fn b2Body_CreateFixture(this: *const B2Body, def: *mut FixtureDef) -> *mut B2Fixture;
+	fn b2Body_CreateFixture_FromShape(this: *const B2Body, shape: *const B2Shape, density: Float32) -> *mut B2Fixture;
+	fn b2Body_DestroyFixture(this: *const B2Body, fixture: *mut B2Fixture);
+	fn b2Body_SetTransform(this: *const B2Body, position: &Vec2, angle: Float32);
+	fn b2Body_GetTransform(this: *const B2Body) -> &Transform;
+	fn b2Body_GetPosition(this: *const B2Body) -> &Vec2;
+	fn b2Body_GetAngle(this: *const B2Body) -> Float32;
 	fn b2Body_GetWorldCenter(this: *const B2Body) -> &Vec2;
 	fn b2Body_GetLocalCenter(this: *const B2Body) -> &Vec2;
-    fn b2Body_GetFixtureList(this: *mut B2Body) -> *mut B2Fixture;
-    fn b2Body_GetNext(this: *mut B2Body) -> *mut B2Body;
-    fn b2Body_GetPosition(this: *mut B2Body) -> &Vec2;
-    fn b2Body_GetUserData(this: *const B2Body) -> usize;
-    fn b2Body_GetWorld(this: *const B2Body) -> *mut B2World;
-    fn b2Body_GetLocalPoint(this: *const B2Body, worldPoint: &Vec2) -> Vec2;
 	fn b2Body_SetLinearVelocity(this: *const B2Body, v: &Vec2);
 	fn b2Body_GetLinearVelocity(this: *const B2Body) -> &Vec2;
 	fn b2Body_SetAngularVelocity(this: *const B2Body, omega: Float32);
@@ -122,6 +121,42 @@ extern {
 	fn b2Body_ApplyTorque(this: *const B2Body, torque: Float32, wake: bool);
 	fn b2Body_ApplyLinearImpulse(this: *const B2Body, impulse: &Vec2, point: &Vec2, wake: bool);
 	fn b2Body_ApplyAngularImpulse(this: *const B2Body, impulse: Float32, wake: bool);
+	fn b2Body_GetMass(this: *const B2Body) -> Float32;
+	fn b2Body_GetInertia(this: *const B2Body) -> Float32;
+	// fn b2Body_GetMassData(this: *const B2Body, b2MassData* data);
+	// fn b2Body_SetMassData(this: *const B2Body, const b2MassData* data);
+	fn b2Body_ResetMassData(this: *const B2Body);
+	fn b2Body_GetWorldPoint(this: *const B2Body, local_point: &Vec2) -> Vec2;
+	fn b2Body_GetWorldVector(this: *const B2Body, localVector: &Vec2) -> Vec2;
+	fn b2Body_GetLocalPoint(this: *const B2Body, worldPoint: &Vec2) -> Vec2;
+	fn b2Body_GetLocalVector(this: *const B2Body, worldVector: &Vec2) -> Vec2;
+	fn b2Body_GetLinearVelocityFromWorldPoint(this: *const B2Body, worldPoint: &Vec2) -> Vec2;
+	fn b2Body_GetLinearVelocityFromLocalPoint(this: *const B2Body, local_point: &Vec2) -> Vec2;
+	fn b2Body_GetLinearDamping(this: *const B2Body) -> Float32;
+	fn b2Body_SetLinearDamping(this: *const B2Body, linearDamping: Float32);
+	fn b2Body_GetAngularDamping(this: *const B2Body) -> Float32;
+	fn b2Body_SetAngularDamping(this: *const B2Body, angularDamping: Float32);
+	fn b2Body_GetGravityScale(this: *const B2Body) -> Float32;
+	fn b2Body_SetGravityScale(this: *const B2Body, scale: Float32);
+	fn b2Body_SetType(this: *const B2Body, btype: BodyType);
+	fn b2Body_GetType(this: *const B2Body) -> BodyType;
+	fn b2Body_SetBullet(this: *const B2Body, flag: bool);
+	fn b2Body_IsBullet(this: *const B2Body) -> bool;
+	fn b2Body_SetSleepingAllowed(this: *const B2Body, flag: bool);
+	fn b2Body_IsSleepingAllowed(this: *const B2Body) -> bool;
+	fn b2Body_SetAwake(this: *const B2Body, flag: bool);
+	fn b2Body_IsAwake(this: *const B2Body) -> bool;
+	fn b2Body_SetActive(this: *const B2Body, flag: bool);
+	fn b2Body_IsActive(this: *const B2Body) -> bool;
+	fn b2Body_SetFixedRotation(this: *const B2Body, flag: bool);
+	fn b2Body_IsFixedRotation(this: *const B2Body) -> bool;
+	fn b2Body_GetFixtureList(this: *const B2Body) -> *mut B2Fixture;
+	// b2JointEdge* b2Body_GetJointList(this: *const B2Body);
+	// b2ContactEdge* b2Body_GetContactList(this: *const B2Body);
+	fn b2Body_GetNext(this: *const B2Body) -> *mut B2Body;
+	fn b2Body_GetUserData(this: *const B2Body) -> *mut c_void;
+	fn b2Body_SetUserData(this: *const B2Body, data: *mut c_void);
+	fn b2Body_GetWorld(this: *const B2Body) -> *mut B2World;
 }
 
 /// A rigid body. These are created via b2World::CreateBody.
@@ -158,6 +193,32 @@ impl Body {
         }
     }
 
+	pub fn destroy_fixture(&self, fixture: &mut Fixture) {
+		unsafe {
+			b2Body_DestroyFixture(self.ptr, fixture.ptr)
+		}
+	}
+
+	pub fn set_transform(&self, position: &Vec2, angle: Float32) {
+		unsafe {
+			b2Body_SetTransform(self.ptr, position, angle)
+		}
+	}
+
+	pub fn get_transform(&self) -> &Transform {
+		unsafe {
+			b2Body_GetTransform(self.ptr)
+		}
+	}
+
+    /// Get the world body origin position.
+    /// @return the world position of the body's origin.
+    pub fn get_position(&self) -> &Vec2 {
+        unsafe {
+            b2Body_GetPosition(self.ptr)
+        }
+    }
+
     /// Get the angle in radians.
     /// @return the current world rotation angle in radians.
     pub fn get_angle(&self) -> f32 {
@@ -177,63 +238,6 @@ impl Body {
 			b2Body_GetLocalCenter(self.ptr)
 		}
 	}
-
-    /// Get the list of all fixtures attached to this body.
-    pub fn get_fixture_list(&self) -> Option<Fixture> {
-        let ptr;
-        unsafe {
-            ptr = b2Body_GetFixtureList(self.ptr);
-        }
-
-        if ptr.is_null() {
-            None
-        } else {
-            Some(Fixture { ptr: ptr })
-        }
-    }
-
-    /// Get the next body in the world's body list.
-    pub fn get_next(&self) -> Option<Body> {
-        let ptr: *mut B2Body;
-
-        unsafe {
-            ptr = b2Body_GetNext(self.ptr);
-        }
-
-        if ptr.is_null() {
-            None
-        } else {
-            Some(Body { ptr: ptr })
-        }
-    }
-
-    /// Get the world body origin position.
-    /// @return the world position of the body's origin.
-    pub fn get_position(&self) -> &Vec2 {
-        unsafe {
-            b2Body_GetPosition(self.ptr)
-        }
-    }
-
-    /// Get the user data pointer that was provided in the body definition.
-    pub fn get_user_data(&self) -> usize {
-        unsafe {
-            b2Body_GetUserData(self.ptr)
-        }
-    }
-
-    /// Get the parent world of this body.
-    pub fn get_world(&self) -> World {
-        unsafe {
-            World { ptr: b2Body_GetWorld(self.ptr) }
-        }
-    }
-
-    pub fn get_local_point(&self, world_point: &Vec2) -> Vec2 {
-        unsafe {
-            b2Body_GetLocalPoint(self.ptr, world_point)
-        }
-    }
 
 	pub fn set_linear_velocity(&self, v: &Vec2) {
 		unsafe {
@@ -289,4 +293,227 @@ impl Body {
 		}
 	}
 
+	pub fn get_mass(&self) -> f32 {
+		unsafe {
+			b2Body_GetMass(self.ptr)
+		}
+	}
+
+	pub fn get_inertia(&self) -> f32 {
+		unsafe {
+			b2Body_GetInertia(self.ptr)
+		}
+	}
+
+	pub fn reset_mass_data(&self) {
+		unsafe {
+			b2Body_ResetMassData(self.ptr)
+		}
+	}
+
+	pub fn get_world_point(&self, local_point: &Vec2) -> Vec2 {
+		unsafe {
+			b2Body_GetWorldPoint(self.ptr, local_point)
+		}
+	}
+
+	pub fn get_world_vector(&self, local_vector: &Vec2) -> Vec2 {
+		unsafe {
+			b2Body_GetWorldVector(self.ptr, local_vector)
+		}
+	}
+
+    pub fn get_local_point(&self, world_point: &Vec2) -> Vec2 {
+        unsafe {
+            b2Body_GetLocalPoint(self.ptr, world_point)
+        }
+    }
+
+	pub fn get_local_vector(&self, world_vector: &Vec2) -> Vec2 {
+		unsafe {
+			b2Body_GetLocalVector(self.ptr, world_vector)
+		}
+	}
+
+	pub fn get_linear_velocity_from_world_point(&self, world_point: &Vec2) -> Vec2 {
+		unsafe {
+			b2Body_GetLinearVelocityFromWorldPoint(self.ptr, world_point)
+		}
+	}
+
+	pub fn get_linear_velocity_from_local_point(&self, local_point: &Vec2) -> Vec2 {
+		unsafe {
+			b2Body_GetLinearVelocityFromLocalPoint(self.ptr, local_point)
+		}
+	}
+
+	pub fn get_linear_damping(&self) -> f32 {
+		unsafe {
+			b2Body_GetLinearDamping(self.ptr)
+		}
+	}
+
+	pub fn set_linear_damping(&self, linear_damping: f32) {
+		unsafe {
+			b2Body_SetLinearDamping(self.ptr, linear_damping)
+		}
+	}
+	pub fn get_angular_damping(&self) -> f32 {
+		unsafe {
+			b2Body_GetAngularDamping(self.ptr)
+		}
+	}
+
+	pub fn set_angular_damping(&self, angular_damping: f32) {
+		unsafe {
+			b2Body_SetAngularDamping(self.ptr, angular_damping)
+		}
+	}
+
+	pub fn get_gravity_scale(&self) -> f32 {
+		unsafe {
+			b2Body_GetGravityScale(self.ptr)
+		}
+	}
+
+	pub fn set_gravity_scale(&self, scale: f32) {
+		unsafe {
+			b2Body_SetGravityScale(self.ptr, scale)
+		}
+	}
+
+	pub fn set_type(&self, btype: BodyType) {
+		unsafe {
+			b2Body_SetType(self.ptr, btype)
+		}
+	}
+
+	pub fn get_type(&self) -> BodyType {
+		unsafe {
+			b2Body_GetType(self.ptr)
+		}
+	}
+
+	pub fn set_bullet(&self, flag: bool) {
+		unsafe {
+			b2Body_SetBullet(self.ptr, flag)
+		}
+	}
+
+	pub fn is_bullet(&self) -> bool {
+		unsafe {
+			b2Body_IsBullet(self.ptr)
+		}
+	}
+
+	pub fn set_sleeping_allowed(&self, flag: bool) {
+		unsafe {
+			b2Body_SetSleepingAllowed(self.ptr, flag)
+		}
+	}
+
+	pub fn is_sleeping_allowed(&self) -> bool {
+		unsafe {
+			b2Body_IsSleepingAllowed(self.ptr)
+		}
+	}
+
+	pub fn set_awake(&self, flag: bool) {
+		unsafe {
+			b2Body_SetAwake(self.ptr, flag)
+		}
+	}
+
+	pub fn is_awake(&self) -> bool {
+		unsafe {
+			b2Body_IsAwake(self.ptr)
+		}
+	}
+
+	pub fn set_active(&self, flag: bool) {
+		unsafe {
+			b2Body_SetActive(self.ptr, flag)
+		}
+	}
+
+	pub fn is_active(&self) -> bool {
+		unsafe {
+			b2Body_IsActive(self.ptr)
+		}
+	}
+
+	pub fn set_fixed_rotation(&self, flag: bool) {
+		unsafe {
+			b2Body_SetFixedRotation(self.ptr, flag)
+		}
+	}
+
+	pub fn is_fixed_rotation(&self) -> bool {
+		unsafe {
+			b2Body_IsFixedRotation(self.ptr)
+		}
+	}
+
+	/// Get the list of all fixtures attached to this body.
+    pub fn get_fixture_list(&self) -> Option<Fixture> {
+        let ptr;
+        unsafe {
+            ptr = b2Body_GetFixtureList(self.ptr);
+        }
+
+        if ptr.is_null() {
+            None
+        } else {
+            Some(Fixture { ptr: ptr })
+        }
+    }
+
+    /// Get the next body in the world's body list.
+    pub fn get_next(&self) -> Option<Body> {
+        let ptr: *mut B2Body;
+
+        unsafe {
+            ptr = b2Body_GetNext(self.ptr);
+        }
+
+        if ptr.is_null() {
+            None
+        } else {
+            Some(Body { ptr: ptr })
+        }
+    }
+
+    /// Get the user data pointer that was provided in the body definition.
+    pub fn get_user_data<T>(&self) -> Option<&mut T> {
+        unsafe {
+            let tmp = b2Body_GetUserData(self.ptr) as *mut T;
+
+			if tmp.is_null() {
+				None
+			}
+			else {
+				Some(&mut *tmp)
+			}
+        }
+    }
+
+	pub fn set_user_data<T>(&self, data: Option<&mut T>) {
+		unsafe {
+			b2Body_SetUserData(self.ptr,
+				if let Some(data) = data {
+					data as *mut T as *mut c_void
+				}
+				else {
+					ptr::null_mut()
+				}
+			)
+		}
+	}
+
+    /// Get the parent world of this body.
+    pub fn get_world(&self) -> World {
+        unsafe {
+            World { ptr: b2Body_GetWorld(self.ptr) }
+        }
+    }
 }
