@@ -11,7 +11,7 @@ extern "C" {
     void b2World_Delete(b2World* self) {
         delete self;
     }
-    
+
     int32 b2World_GetBodyCount(const b2World* self) {
         return self->GetBodyCount();
     }
@@ -37,48 +37,6 @@ extern "C" {
     	return self->CreateBody(bd);
     }
 
-    b2RevoluteJoint* b2World_CreateRevoluteJoint(
-        b2World* self,
-
-        // b2JointDef
-        const b2JointType type,
-        void* userData,
-        b2Body* bodyA,
-        b2Body* bodyB,
-        const bool collideConnected,
-
-        // b2RevoluteJointDef
-        const b2Vec2 localAnchorA,
-        const b2Vec2 localAnchorB,
-        const float32 referenceAngle,
-        const bool enableLimit,
-        const float32 lowerAngle,
-        const float32 upperAngle,
-        const bool enableMotor,
-        const float32 motorSpeed,
-        const float32 maxMotorTorque
-    ) {
-        
-        b2RevoluteJointDef jd;
-
-        jd.type = type;
-        jd.userData = userData;
-        jd.bodyA = bodyA;
-        jd.bodyB = bodyB;
-        jd.collideConnected = collideConnected;
-        jd.localAnchorA = localAnchorA;
-        jd.localAnchorB = localAnchorB;
-        jd.referenceAngle = referenceAngle;
-        jd.enableLimit = enableLimit;
-        jd.lowerAngle = lowerAngle;
-        jd.upperAngle = upperAngle;
-        jd.enableMotor = enableMotor;
-        jd.motorSpeed = motorSpeed;
-        jd.maxMotorTorque = maxMotorTorque;
-
-        return (b2RevoluteJoint*)self->CreateJoint(&jd);
-    }
-
     b2ParticleSystem* b2World_CreateParticleSystem(b2World* self, const b2ParticleSystemDef* def) {
         return self->CreateParticleSystem(def);
     }
@@ -89,4 +47,3 @@ extern "C" {
 
 
 } // extern C
-
