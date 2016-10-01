@@ -1,5 +1,3 @@
-#include <Box2D/Box2D.h>
-#include "../Common/c_b2Math.h"
 #include "c_b2World.h"
 
 extern "C" {
@@ -12,21 +10,12 @@ extern "C" {
         delete self;
     }
 
-    int32 b2World_GetBodyCount(const b2World* self) {
-        return self->GetBodyCount();
+	void b2World_SetContactListener(b2World* self, b2ContactListener* listener) {
+        self->SetContactListener(listener);
     }
 
-    int32 b2World_GetJointCount(const b2World* self) {
-        return self->GetJointCount();
-    }
-
-    const b2Body* b2World_GetBodyList(const b2World* self) {
+    const b2Body* b2World_GetBodyList(b2World* self) {
         return self->GetBodyList();
-    }
-
-    c_b2Vec2 b2World_GetGravity(const b2World* self) {
-    	b2Vec2 tmp = self->GetGravity();
-        return *cast(&tmp);
     }
 
     b2ParticleSystem* b2World_GetParticleSystemList(b2World* self) {
@@ -37,12 +26,37 @@ extern "C" {
     	return self->CreateBody(bd);
     }
 
+    void b2World_DestroyBody(b2World* self, b2Body* body) {
+        self->DestroyBody(body);
+    }
+
     b2ParticleSystem* b2World_CreateParticleSystem(b2World* self, const b2ParticleSystemDef* def) {
         return self->CreateParticleSystem(def);
     }
 
     void b2World_Step(b2World* self, float32 timeStep, int32 velocityIterations, int32 positionIterations) {
         self->Step(timeStep, velocityIterations, positionIterations);
+    }
+
+    void b2World_RayCast(b2World* self, b2RayCastCallback* callback, const b2Vec2* point1, const b2Vec2* point2) {
+        self->RayCast(callback, *point1, *point2);
+    }
+
+    int32 b2World_GetBodyCount(b2World* self) {
+        return self->GetBodyCount();
+    }
+
+    int32 b2World_GetJointCount(b2World* self) {
+        return self->GetJointCount();
+    }
+
+    void b2World_SetGravity(b2World* self, const b2Vec2* gravity) {
+        self->SetGravity(*gravity);
+    }
+
+    c_b2Vec2 b2World_GetGravity(b2World* self) {
+    	b2Vec2 tmp = self->GetGravity();
+        return *cast(&tmp);
     }
 
 

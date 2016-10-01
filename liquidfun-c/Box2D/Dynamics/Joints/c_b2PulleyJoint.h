@@ -1,5 +1,5 @@
-#ifndef C_B2_JOINT
-#define C_B2_JOINT
+#ifndef C_B2_PULLEY_JOINT
+#define C_B2_PULLEY_JOINT
 
 #ifdef __cplusplus
 extern "C" {

@@ -9,14 +9,13 @@ pub struct Vec2 {
 }
 
 impl Vec2 {
-
 	/// Construct using coordinates.
-	pub fn new(x: f32, y: f32) -> Vec2 {
+	pub fn new(x: Float32, y: Float32) -> Vec2 {
 		Vec2 {x: x, y: y}
 	}
 
 	/// Set this vector to some specified coordinates.
-	pub fn set(&mut self, x: f32, y: f32) {
+	pub fn set(&mut self, x: Float32, y: Float32) {
 		self.x = x;
 		self.y = y;
 	}
@@ -26,6 +25,10 @@ impl Vec2 {
 		Vec2::default()
 	}
 }
+
+#[allow(non_snake_case)]
+/// Construct using coordinates.
+#[inline] pub fn Vec2(x: Float32, y: Float32) -> Vec2 { Vec2 { x: x, y: y } }
 
 #[repr(C)]
 #[derive(Debug, PartialEq, Default, Copy, Clone)]

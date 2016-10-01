@@ -1,4 +1,5 @@
 use super::body::*;
+use super::world_callbacks::*;
 use super::super::common::math::*;
 use super::super::common::settings::*;
 use super::super::particle::particle_system::*;
@@ -7,23 +8,26 @@ use super::joints;
 pub enum B2World {}
 
 extern {
+    fn b2World_New(gravity: *const Vec2) -> *mut B2World;
+    fn b2World_Delete(world: *mut B2World);
+    fn b2World_SetContactListener(this: *mut B2World, listener: *mut B2ContactListener);
     fn b2World_CreateBody(world: *mut B2World, bd: *const BodyDef) -> *mut B2Body;
     fn b2World_CreateParticleSystem(world: *mut B2World, def: *const ParticleSystemDef) -> *mut B2ParticleSystem;
-    fn b2World_Delete(world: *mut B2World);
     fn b2World_GetBodyCount(world: *const B2World) -> Int32;
     fn b2World_GetJointCount(world: *const B2World) -> Int32;
     fn b2World_GetBodyList(world: *const B2World) -> *mut B2Body;
-    fn b2World_GetGravity(world: *mut B2World) -> Vec2;
     fn b2World_GetParticleSystemList(world: *const B2World) -> *mut B2ParticleSystem;
-    fn b2World_New(gravity: *const Vec2) -> *mut B2World;
     fn b2World_Step(this: *mut B2World, timeStep: Float32, velocityIterations: Int32, positionIterations: Int32);
+    fn b2World_RayCast(this: *const B2World, callback: *const B2RayCastCallback, point1: &Vec2, point2: &Vec2);
+    fn b2World_SetGravity(world: *mut B2World, gravity: *const Vec2);
+    fn b2World_GetGravity(world: *mut B2World) -> Vec2;
 }
 
 /// The world class manages all physics entities, dynamic simulation,
 /// and asynchronous queries. The world also contains efficient memory
 /// management facilities.
 pub struct World {
-	pub ptr: *mut B2World
+	pub ptr: *mut B2World,
 }
 
 impl World {
@@ -36,6 +40,13 @@ impl World {
         }
     }
 
+    pub fn set_contact_listener<C: ContactListener>(&mut self, listener: &mut C) {
+        let mut glue = ContactListenerGlue::new();
+        glue.use_with(listener);
+
+        unsafe { b2World_SetContactListener(self.ptr, glue.ptr) }
+    }
+
     /// Create a rigid body given a definition. No reference to the definition
     /// is retained.
     /// @warning This function is locked during callbacks.
@@ -45,42 +56,14 @@ impl World {
         }
     }
 
+    /// Create a joint to constrain bodies together. No reference to the definition
+	/// is retained. This may cause the connected bodies to cease colliding.
+	/// @warning This function is locked during callbacks.
     pub fn create_joint<J, JD>(&mut self, jd: &JD) -> J
         where JD: joints::JointDef<J>
     {
         jd.create(self)
     }
-
-    /// Create a revolute joint to constrain bodies together. No reference to the definition
-    /// is retained. This may cause the connected bodies to cease colliding.
-    /// @warning This function is locked during callbacks.
-    // pub fn create_revolute_joint(&mut self, def: &(joints::JointDef, joints::revolute_joint::RevoluteJointDef)) -> joints::revolute_joint::RevoluteJoint {
-    //     unsafe {
-    //         joints::revolute_joint::RevoluteJoint {ptr: b2World_CreateRevoluteJoint(
-    //             self.ptr,
-    //             def.0.joint_type,
-    //             def.0.user_data,
-    //             match def.0.body_a {
-    //                 Some(ref b) =>b.ptr,
-    //                 None => ptr::null_mut()
-    //             },
-    //             match def.0.body_b {
-    //                 Some(ref b) =>b.ptr,
-    //                 None => ptr::null_mut()
-    //             },
-    //             def.0.collide_connected,
-    //             def.1.local_anchor_a,
-    //             def.1.local_anchor_b,
-    //             def.1.reference_angle,
-    //             def.1.enable_limit,
-    //             def.1.lower_angle,
-    //             def.1.upper_angle,
-    //             def.1.enable_motor,
-    //             def.1.motor_speed,
-    //             def.1.max_motor_torque
-    //         )}
-    //     }
-    // }
 
     /// Create a particle system given a definition. No reference to the
     /// definition is retained.
@@ -138,13 +121,6 @@ impl World {
         }
     }
 
-    /// Get the global gravity vector.
-    pub fn get_gravity(&mut self) -> Vec2 {
-    	unsafe {
-    		b2World_GetGravity(self.ptr)
-    	}
-    }
-
     /// Take a time step. This performs collision detection, integration,
     /// and constraint solution.
     /// @param timeStep the amount of time to simulate, this should not vary.
@@ -154,6 +130,30 @@ impl World {
         unsafe {
             b2World_Step(self.ptr, time_step, velocity_iterations, position_iterations);
         }
+    }
+
+    /// Ray-cast the world for all fixtures in the path of the ray. Your callback
+    /// controls whether you get the closest point, any point, or n-points.
+    /// The ray-cast ignores shapes that contain the starting point.
+    /// @param callback a user implemented callback class.
+    /// @param point1 the ray starting point
+    /// @param point2 the ray ending point
+    pub fn ray_cast<C: RayCastCallback>(&self, callback: &mut C, point1: &Vec2, point2: &Vec2)
+    {
+        let mut glue = RayCastCallbackGlue::new();
+        glue.use_with(callback);
+
+        unsafe { b2World_RayCast(self.ptr, glue.ptr, point1, point2) }
+    }
+
+    /// Change the global gravity vector.
+    pub fn set_gravity(&mut self, gravity: &Vec2) {
+    	unsafe { b2World_SetGravity(self.ptr, gravity) }
+    }
+
+    /// Get the global gravity vector.
+    pub fn get_gravity(&mut self) -> Vec2 {
+    	unsafe { b2World_GetGravity(self.ptr) }
     }
 
 }

@@ -1,5 +1,5 @@
-#ifndef C_B2_REVOLUTE_JOINT
-#define C_B2_REVOLUTE_JOINT
+#ifndef C_B2_MOTOR_JOINT
+#define C_B2_MOTOR_JOINT
 
 #ifdef __cplusplus
 extern "C" {
