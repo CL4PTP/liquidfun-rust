@@ -1,11 +1,13 @@
 use libc::c_void;
-use std::mem::transmute;
+use std::mem;
 use std::ptr;
 use super::fixture::*;
+use super::world::*;
+use super::joints::*;
+use super::contact::*;
 use super::super::collision::shapes::shape::*;
 use super::super::common::math::{Vec2, Transform};
 use super::super::common::settings::*;
-use super::world::*;
 
 /// The body type.
 /// static: zero mass, zero velocity, may be manually moved
@@ -123,8 +125,8 @@ extern {
 	fn b2Body_ApplyAngularImpulse(this: *const B2Body, impulse: Float32, wake: bool);
 	fn b2Body_GetMass(this: *const B2Body) -> Float32;
 	fn b2Body_GetInertia(this: *const B2Body) -> Float32;
-	// fn b2Body_GetMassData(this: *const B2Body, b2MassData* data);
-	// fn b2Body_SetMassData(this: *const B2Body, const b2MassData* data);
+	fn b2Body_GetMassData(this: *const B2Body, data: *mut MassData);
+	fn b2Body_SetMassData(this: *const B2Body, data: *const MassData);
 	fn b2Body_ResetMassData(this: *const B2Body);
 	fn b2Body_GetWorldPoint(this: *const B2Body, local_point: &Vec2) -> Vec2;
 	fn b2Body_GetWorldVector(this: *const B2Body, localVector: &Vec2) -> Vec2;
@@ -151,8 +153,8 @@ extern {
 	fn b2Body_SetFixedRotation(this: *const B2Body, flag: bool);
 	fn b2Body_IsFixedRotation(this: *const B2Body) -> bool;
 	fn b2Body_GetFixtureList(this: *const B2Body) -> *mut B2Fixture;
-	// b2JointEdge* b2Body_GetJointList(this: *const B2Body);
-	// b2ContactEdge* b2Body_GetContactList(this: *const B2Body);
+	fn b2Body_GetJointList(this: *const B2Body) -> *mut JointEdge;
+	fn b2Body_GetContactList(this: *const B2Body) -> *mut ContactEdge;
 	fn b2Body_GetNext(this: *const B2Body) -> *mut B2Body;
 	fn b2Body_GetUserData(this: *const B2Body) -> *mut c_void;
 	fn b2Body_SetUserData(this: *const B2Body, data: *mut c_void);
@@ -176,7 +178,7 @@ impl Body {
     /// @warning This function is locked during callbacks.
     pub fn create_fixture(&self, def: &FixtureDef) -> Fixture {
         unsafe {
-            Fixture { ptr: b2Body_CreateFixture(self.ptr, transmute(def)) }
+            Fixture { ptr: b2Body_CreateFixture(self.ptr, mem::transmute(def)) }
         }
     }
 
@@ -303,6 +305,20 @@ impl Body {
 		unsafe {
 			b2Body_GetInertia(self.ptr)
 		}
+	}
+
+	pub fn get_mass_data(&self) -> MassData {
+		unsafe {
+			let mut mass_data = mem::uninitialized();
+
+			b2Body_GetMassData(self.ptr, &mut mass_data);
+
+			mass_data
+		}
+	}
+
+	pub fn set_mass_data(&self, data: &MassData) {
+		unsafe { b2Body_SetMassData(self.ptr, data) }
 	}
 
 	pub fn reset_mass_data(&self) {
@@ -467,6 +483,14 @@ impl Body {
             Some(Fixture { ptr: ptr })
         }
     }
+
+	pub fn get_joint_list(&self) -> &mut JointEdge {
+		unsafe { &mut *b2Body_GetJointList(self.ptr) }
+	}
+
+	pub fn get_contact_list(&self) -> &mut ContactEdge {
+		unsafe { &mut *b2Body_GetContactList(self.ptr) }
+	}
 
     /// Get the next body in the world's body list.
     pub fn get_next(&self) -> Option<Body> {

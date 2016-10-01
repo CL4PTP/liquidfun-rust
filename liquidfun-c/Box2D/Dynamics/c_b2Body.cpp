@@ -82,11 +82,14 @@ extern "C" {
 	float32 b2Body_GetInertia(b2Body* self) {
 		return self->GetInertia();
 	}
-	
-	// TODO: GetMassData(b2MassData*);
-	// void b2Body_GetMassData(b2Body* self, b2MassData* data)
-	// TODO: SetMassData(b2MassData*);
-	// void b2Body_SetMassData(b2Body* self, const b2MassData* data);
+
+	void b2Body_GetMassData(b2Body* self, b2MassData* data) {
+		self->GetMassData(data);
+	}
+
+	void b2Body_SetMassData(b2Body* self, const b2MassData* data) {
+		self->SetMassData(data);
+	}
 
 	void b2Body_ResetMassData(b2Body* self) {
 		self->ResetMassData();
@@ -197,11 +200,13 @@ extern "C" {
 		return self->GetFixtureList();
 	}
 
-	// TODO: b2JointEdge* b2Body_GetJointList();
-	// b2JointEdge* b2Body_GetJointList(b2Body* self);
+	b2JointEdge* b2Body_GetJointList(b2Body* self) {
+		return self->GetJointList();
+	}
 
-	// TODO: b2ContactEdge* b2Body_GetContactList
-	// b2ContactEdge* b2Body_GetContactList(b2Body* self);
+	b2ContactEdge* b2Body_GetContactList(b2Body* self) {
+		return self->GetContactList();
+	}
 
 	b2Body* b2Body_GetNext(b2Body* self) {
 		return self->GetNext();

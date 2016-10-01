@@ -31,7 +31,7 @@ pub enum JointType {
     WeldJoint,
 	FrictionJoint,
 	RopeJoint,
-	MotorJoint
+	MotorJoint,
 }
 
 #[repr(C)]
@@ -51,6 +51,52 @@ pub struct Jacobian
 	pub linear: Vec2,
 	pub angular_a: Float32,
 	pub angular_b: Float32,
+}
+
+/// A joint edge is used to connect bodies and joints together
+/// in a joint graph where each body is a node and each joint
+/// is an edge. A joint edge belongs to a doubly linked list
+/// maintained in each attached body. Each joint has two joint
+/// nodes, one for each attached body.
+#[derive(Debug)]
+#[repr(C)]
+pub struct JointEdge
+{
+	/// provides quick access to the other body attached.
+	other: *mut B2Body,
+	/// the joint
+	joint: *mut B2Joint,
+	/// the previous joint edge in the body's joint list
+	prev: *mut JointEdge,
+	/// the next joint edge in the body's joint list
+	next: *mut JointEdge,
+}
+
+impl JointEdge {
+    pub fn other(&self) -> Body {
+        Body { ptr: self.other }
+    }
+
+	// TODO: do something other than this...
+    pub fn joint(&self) -> *mut B2Joint {
+		self.joint
+    }
+
+    pub fn prev(&self) -> Option<&Self> {
+        if self.prev.is_null() {
+            None
+        } else {
+            Some(unsafe { &*self.prev })
+        }
+    }
+
+    pub fn next(&self) -> Option<&Self> {
+        if self.next.is_null() {
+            None
+        } else {
+            Some(unsafe { &*self.next })
+        }
+    }
 }
 
 pub trait JointDef<T>: Default {

@@ -1,6 +1,52 @@
+use super::body::*;
+use super::fixture::*;
 use super::super::common::settings::*;
 use super::super::collision::*;
-use super::fixture::*;
+
+/// A contact edge is used to connect bodies and contacts together
+/// in a contact graph where each body is a node and each contact
+/// is an edge. A contact edge belongs to a doubly linked list
+/// maintained in each attached body. Each contact has two contact
+/// nodes, one for each attached body.
+#[derive(Debug)]
+#[repr(C)]
+pub struct ContactEdge
+{
+    /// provides quick access to the other body attached.
+    other: *mut B2Body,
+    /// the contact
+    contact: *mut B2Contact,
+    /// the previous contact edge in the body's contact list
+    prev: *mut ContactEdge,
+    /// the next contact edge in the body's contact list
+    next: *mut ContactEdge,
+}
+
+impl ContactEdge {
+    pub fn other(&self) -> Body {
+        Body { ptr: self.other }
+    }
+
+    pub fn contact(&self) -> Contact {
+        Contact { ptr: self.contact }
+    }
+
+    pub fn prev(&self) -> Option<&Self> {
+        if self.prev.is_null() {
+            None
+        } else {
+            Some(unsafe { &*self.prev })
+        }
+    }
+
+    pub fn next(&self) -> Option<&Self> {
+        if self.next.is_null() {
+            None
+        } else {
+            Some(unsafe { &*self.next })
+        }
+    }
+}
 
 pub enum B2Contact {}
 

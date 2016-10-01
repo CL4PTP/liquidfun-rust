@@ -25,8 +25,8 @@ extern "C" {
 	void b2Body_ApplyAngularImpulse(b2Body* self, float32 impulse, bool wake);
 	float32 b2Body_GetMass(b2Body* self);
 	float32 b2Body_GetInertia(b2Body* self);
-	// void b2Body_GetMassData(b2Body* self, b2MassData* data);
-	// void b2Body_SetMassData(b2Body* self, const b2MassData* data);
+	void b2Body_GetMassData(b2Body* self, b2MassData* data);
+	void b2Body_SetMassData(b2Body* self, const b2MassData* data);
 	void b2Body_ResetMassData(b2Body* self);
 	c_b2Vec2 b2Body_GetWorldPoint(b2Body* self, const b2Vec2& localPoint);
 	c_b2Vec2 b2Body_GetWorldVector(b2Body* self, const b2Vec2& localVector);
@@ -53,8 +53,8 @@ extern "C" {
 	void b2Body_SetFixedRotation(b2Body* self, bool flag);
 	bool b2Body_IsFixedRotation(b2Body* self);
 	b2Fixture* b2Body_GetFixtureList(b2Body* self);
-	// b2JointEdge* b2Body_GetJointList(b2Body* self);
-	// b2ContactEdge* b2Body_GetContactList(b2Body* self);
+	b2JointEdge* b2Body_GetJointList(b2Body* self);
+	b2ContactEdge* b2Body_GetContactList(b2Body* self);
 	b2Body* b2Body_GetNext(b2Body* self);
 	void* b2Body_GetUserData(const b2Body* self);
 	void b2Body_SetUserData(b2Body* self, void* data);
