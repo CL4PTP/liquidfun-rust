@@ -17,7 +17,9 @@ extern {
     fn b2World_GetJointCount(world: *const B2World) -> Int32;
     fn b2World_GetBodyList(world: *const B2World) -> *mut B2Body;
     fn b2World_GetParticleSystemList(world: *const B2World) -> *mut B2ParticleSystem;
+    fn b2World_StepParticle(this: *mut B2World, timeStep: Float32, velocityIterations: Int32, positionIterations: Int32, particleIterations: Int32);
     fn b2World_Step(this: *mut B2World, timeStep: Float32, velocityIterations: Int32, positionIterations: Int32);
+    fn b2World_CalculateReasonableParticleIterations(this: *const B2World, timeStep: Float32) -> Int32;
     fn b2World_RayCast(this: *const B2World, callback: *const B2RayCastCallback, point1: &Vec2, point2: &Vec2);
     fn b2World_SetGravity(world: *mut B2World, gravity: *const Vec2);
     fn b2World_GetGravity(world: *mut B2World) -> Vec2;
@@ -122,6 +124,22 @@ impl World {
     }
 
     /// Take a time step. This performs collision detection, integration,
+	/// and constraint solution.
+	/// For the numerical stability of particles, minimize the following
+	/// dimensionless gravity acceleration:
+	///     gravity / particleRadius * (timeStep / particleIterations)^2
+	/// b2CalculateParticleIterations() or
+	/// CalculateReasonableParticleIterations() help to determine the optimal
+	/// particleIterations.
+	/// @param timeStep the amount of time to simulate, this should not vary.
+	/// @param velocityIterations for the velocity constraint solver.
+	/// @param positionIterations for the position constraint solver.
+	/// @param particleIterations for the particle simulation.
+    pub fn step_particle(&mut self, time_step: Float32, velocity_iterations: Int32, position_iterations: Int32, particle_iterations: Int32) {
+        unsafe { b2World_StepParticle(self.ptr, time_step, velocity_iterations, position_iterations, particle_iterations) }
+    }
+
+    /// Take a time step. This performs collision detection, integration,
     /// and constraint solution.
     /// @param timeStep the amount of time to simulate, this should not vary.
     /// @param velocityIterations for the velocity constraint solver.
@@ -130,6 +148,15 @@ impl World {
         unsafe {
             b2World_Step(self.ptr, time_step, velocity_iterations, position_iterations);
         }
+    }
+
+    /// Recommend a value to be used in `Step` for `particleIterations`.
+	/// This calculation is necessarily a simplification and should only be
+	/// used as a starting point. Please see "Particle Iterations" in the
+	/// Programmer's Guide for details.
+	/// @param timeStep is the value to be passed into `Step`.
+    pub fn calculate_reasonable_particle_iterations(&self, time_step: Float32) -> Int32 {
+        unsafe { b2World_CalculateReasonableParticleIterations(self.ptr, time_step) }
     }
 
     /// Ray-cast the world for all fixtures in the path of the ray. Your callback

@@ -42,6 +42,14 @@ extern "C" {
         self->RayCast(callback, *point1, *point2);
     }
 
+    void b2World_StepParticle(b2World* self, float32 timeStep, int32 velocityIterations, int32 positionIterations, int32 particleIterations) {
+        self->Step(timeStep, velocityIterations, positionIterations, particleIterations);
+    }
+
+    int32 b2World_CalculateReasonableParticleIterations(b2World* self, float32 timeStep) {
+        return self->CalculateReasonableParticleIterations(timeStep);
+    }
+
     int32 b2World_GetBodyCount(b2World* self) {
         return self->GetBodyCount();
     }

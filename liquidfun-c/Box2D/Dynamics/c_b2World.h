@@ -13,7 +13,9 @@ extern "C" {
 	b2ParticleSystem* b2World_GetParticleSystemList(b2World* self);
 	void b2World_DestroyBody(b2World* self, b2Body* body);
 	b2ParticleSystem* b2World_CreateParticleSystem(b2World* self, const b2ParticleSystemDef* def);
+	void b2World_StepParticle(b2World* self, float32 timeStep, int32 velocityIterations, int32 positionIterations, int32 particleIterations);
 	void b2World_Step(b2World* self, float32 timeStep, int32 velocityIterations, int32 positionIterations);
+	int32 b2World_CalculateReasonableParticleIterations(b2World* self, float32 timeStep);
 	void b2World_RayCast(b2World* self, b2RayCastCallback* callback, const b2Vec2* point1, const b2Vec2* point2);
 	int32 b2World_GetBodyCount(b2World* self);
 	int32 b2World_GetJointCount(b2World* self);
