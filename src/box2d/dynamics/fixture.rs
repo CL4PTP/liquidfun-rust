@@ -86,16 +86,23 @@ extern {
 /// @warning you cannot reuse fixtures.
 #[derive(Clone, Debug)]
 pub struct Fixture {
-    pub ptr: *mut B2Fixture
+    raw: *mut B2Fixture,
 }
 
 impl Fixture {
+	pub unsafe fn from_raw(raw: *mut B2Fixture) -> Self {
+		Fixture { raw: raw }
+	}
+
+	pub unsafe fn ptr(&self) -> *mut B2Fixture {
+		self.raw
+	}
 
     /// Get the type of the child shape. You can use this to down cast to the concrete shape.
     /// @return the shape type.
     pub fn get_type(&self) -> shape::Type {
         unsafe {
-            b2Fixture_GetType(self.ptr)
+            b2Fixture_GetType(self.ptr())
         }
     }
 
@@ -104,24 +111,21 @@ impl Fixture {
     /// Manipulating the shape may lead to non-physical behavior.
     pub fn get_shape(&self) -> *mut shape::B2Shape {
         unsafe {
-            return b2Fixture_GetShape(self.ptr);
+            return b2Fixture_GetShape(self.ptr());
         }
     }
 
     /// Get the next fixture in the parent body's fixture list.
     /// @return the next fixture.
     pub fn get_next(&self) -> Option<Fixture> {
-        let ptr: *mut B2Fixture;
-
         unsafe {
-            ptr = b2Fixture_GetNext(self.ptr);
-        }
+            let ptr = b2Fixture_GetNext(self.ptr());
 
-        if ptr.is_null() {
-            None
-        } else {
-            Some(Fixture { ptr: ptr })
+            if ptr.is_null() {
+                None
+            } else {
+                Some(Fixture::from_raw(ptr))
+            }
         }
     }
-
 }

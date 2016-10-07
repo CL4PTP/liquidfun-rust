@@ -70,18 +70,20 @@ impl Default for FrictionJointDef {
 impl JointDef<FrictionJoint> for FrictionJointDef {
 	fn joint_type() -> JointType { JointType::FrictionJoint }
 
-	fn create(&self, world: &mut World) -> FrictionJoint {
-		unsafe { FrictionJoint { ptr: b2FrictionJoint_Create(
-			world.ptr,
-			self.user_data,
-			if let Some(ref p) = self.body_a { p.ptr } else { ptr::null_mut() },
-		    if let Some(ref p) = self.body_b { p.ptr } else { ptr::null_mut() },
-		    self.collide_connected,
-			self.local_anchor_a,
-			self.local_anchor_b,
-			self.max_force,
-			self.max_torque,
-		) } }
+	fn create(&mut self, world: &mut World) -> FrictionJoint {
+		unsafe {
+			FrictionJoint::from_raw(b2FrictionJoint_Create(
+				world.ptr(),
+				self.user_data,
+				if let Some(ref mut p) = self.body_a { p.ptr() } else { ptr::null_mut() },
+			    if let Some(ref mut p) = self.body_b { p.ptr() } else { ptr::null_mut() },
+			    self.collide_connected,
+				self.local_anchor_a,
+				self.local_anchor_b,
+				self.max_force,
+				self.max_torque,
+			))
+		}
 	}
 }
 
@@ -112,53 +114,61 @@ extern {
 
 #[derive(Clone, Debug)]
 pub struct FrictionJoint {
-	pub ptr: *mut B2FrictionJoint
+	raw: *mut B2FrictionJoint
 }
 
 impl FrictionJoint {
+	pub unsafe fn from_raw(raw: *mut B2FrictionJoint) -> Self {
+		FrictionJoint { raw: raw }
+	}
+
+	pub unsafe fn ptr(&self) -> *mut B2FrictionJoint {
+		self.raw
+	}
+
     pub fn get_local_anchor_a(&self) -> &Vec2 {
-        unsafe { b2FrictionJoint_GetLocalAnchorA(self.ptr) }
+        unsafe { b2FrictionJoint_GetLocalAnchorA(self.ptr()) }
     }
 
     pub fn get_local_anchor_b(&self) -> &Vec2 {
-        unsafe { b2FrictionJoint_GetLocalAnchorB(self.ptr) }
+        unsafe { b2FrictionJoint_GetLocalAnchorB(self.ptr()) }
     }
 
     pub fn set_length(&self, length: Float32) {
-        unsafe { b2FrictionJoint_SetLength(self.ptr, length) }
+        unsafe { b2FrictionJoint_SetLength(self.ptr(), length) }
     }
 
     pub fn get_length(&self) -> Float32 {
-        unsafe { b2FrictionJoint_GetLength(self.ptr) }
+        unsafe { b2FrictionJoint_GetLength(self.ptr()) }
     }
 
     pub fn set_frequency(&self, hz: Float32) {
-        unsafe { b2FrictionJoint_SetFrequency(self.ptr, hz) }
+        unsafe { b2FrictionJoint_SetFrequency(self.ptr(), hz) }
     }
 
     pub fn get_frequency(&self) -> Float32 {
-        unsafe { b2FrictionJoint_GetFrequency(self.ptr) }
+        unsafe { b2FrictionJoint_GetFrequency(self.ptr()) }
     }
 
     pub fn set_damping_ratio(&self, ratio: Float32) {
-        unsafe { b2FrictionJoint_SetDampingRatio(self.ptr, ratio) }
+        unsafe { b2FrictionJoint_SetDampingRatio(self.ptr(), ratio) }
     }
 
     pub fn get_damping_ratio(&self) -> Float32 {
-        unsafe { b2FrictionJoint_GetDampingRatio(self.ptr) }
+        unsafe { b2FrictionJoint_GetDampingRatio(self.ptr()) }
     }
 
 }
 
 impl Joint for FrictionJoint {
 	fn get_handle(&self) -> *mut B2Joint {
-		self.ptr as *mut B2Joint
+		unsafe { self.ptr() as *mut _ }
 	}
 
 	fn get_next(&self) -> Self
 	{
 		unsafe {
-			FrictionJoint { ptr: b2Joint_GetNext(self.get_handle()) as *mut _ }
+			FrictionJoint::from_raw(b2Joint_GetNext(self.get_handle()) as *mut _)
 		}
 	}
 }

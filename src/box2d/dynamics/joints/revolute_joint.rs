@@ -95,23 +95,25 @@ impl Default for RevoluteJointDef {
 impl JointDef<RevoluteJoint> for RevoluteJointDef {
 	fn joint_type() -> JointType { JointType::RevoluteJoint }
 
-	fn create(&self, world: &mut World) -> RevoluteJoint {
-		unsafe { RevoluteJoint { ptr: b2RevoluteJoint_Create(
-			world.ptr,
-			self.user_data,
-			if let Some(ref p) = self.body_a { p.ptr } else { ptr::null_mut() },
-		    if let Some(ref p) = self.body_b { p.ptr } else { ptr::null_mut() },
-		    self.collide_connected,
-		    self.local_anchor_a,
-		    self.local_anchor_b,
-		    self.reference_angle,
-		    self.enable_limit,
-		    self.lower_angle,
-		    self.upper_angle,
-		    self.enable_motor,
-		    self.motor_speed,
-		    self.max_motor_torque,
-		) } }
+	fn create(&mut self, world: &mut World) -> RevoluteJoint {
+		unsafe {
+			RevoluteJoint::from_raw(b2RevoluteJoint_Create(
+				world.ptr(),
+				self.user_data,
+				if let Some(ref mut p) = self.body_a { p.ptr() } else { ptr::null_mut() },
+			    if let Some(ref mut p) = self.body_b { p.ptr() } else { ptr::null_mut() },
+			    self.collide_connected,
+			    self.local_anchor_a,
+			    self.local_anchor_b,
+			    self.reference_angle,
+			    self.enable_limit,
+			    self.lower_angle,
+			    self.upper_angle,
+			    self.enable_motor,
+			    self.motor_speed,
+			    self.max_motor_torque,
+			))
+		}
 	}
 }
 
@@ -161,81 +163,89 @@ extern {
 /// is provided so that infinite forces are not generated.
 #[derive(Clone, Debug)]
 pub struct RevoluteJoint {
-	pub ptr: *mut B2RevoluteJoint
+	raw: *mut B2RevoluteJoint,
 }
 
 impl RevoluteJoint {
+	pub unsafe fn from_raw(raw: *mut B2RevoluteJoint) -> Self {
+		RevoluteJoint { raw: raw }
+	}
+
+	pub unsafe fn ptr(&self) -> *mut B2RevoluteJoint {
+		self.raw
+	}
+
 	pub fn get_reference_angle(&self) -> Float32 {
-		unsafe { b2RevoluteJoint_GetReferenceAngle(self.ptr) }
+		unsafe { b2RevoluteJoint_GetReferenceAngle(self.ptr()) }
 	}
 
 	pub fn get_joint_angle(&self) -> Float32 {
-		unsafe { b2RevoluteJoint_GetJointAngle(self.ptr) }
+		unsafe { b2RevoluteJoint_GetJointAngle(self.ptr()) }
 	}
 
 	pub fn get_joint_speed(&self) -> Float32 {
-		unsafe { b2RevoluteJoint_GetJointSpeed(self.ptr) }
+		unsafe { b2RevoluteJoint_GetJointSpeed(self.ptr()) }
 	}
 
 	pub fn is_limit_enabled(&self) -> bool {
-		unsafe { b2RevoluteJoint_IsLimitEnabled(self.ptr) }
+		unsafe { b2RevoluteJoint_IsLimitEnabled(self.ptr()) }
 	}
 
 	pub fn enable_limit(&self, flag: bool) {
-		unsafe { b2RevoluteJoint_EnableLimit(self.ptr, flag) }
+		unsafe { b2RevoluteJoint_EnableLimit(self.ptr(), flag) }
 	}
 
 	pub fn get_lower_limit(&self) -> Float32 {
-		unsafe { b2RevoluteJoint_GetLowerLimit(self.ptr) }
+		unsafe { b2RevoluteJoint_GetLowerLimit(self.ptr()) }
 	}
 
 	pub fn get_upper_limit(&self) -> Float32 {
-		unsafe { b2RevoluteJoint_GetUpperLimit(self.ptr) }
+		unsafe { b2RevoluteJoint_GetUpperLimit(self.ptr()) }
 	}
 
 	pub fn set_limits(&self, lower: Float32, upper: Float32) {
-		unsafe { b2RevoluteJoint_SetLimits(self.ptr, lower, upper) }
+		unsafe { b2RevoluteJoint_SetLimits(self.ptr(), lower, upper) }
 	}
 
 	pub fn is_motor_enabled(&self) -> bool {
-		unsafe { b2RevoluteJoint_IsMotorEnabled(self.ptr) }
+		unsafe { b2RevoluteJoint_IsMotorEnabled(self.ptr()) }
 	}
 
 	pub fn enable_motor(&self, flag: bool) {
-		unsafe { b2RevoluteJoint_EnableMotor(self.ptr, flag) }
+		unsafe { b2RevoluteJoint_EnableMotor(self.ptr(), flag) }
 	}
 
 	pub fn set_motor_speed(&self, speed: Float32) {
-		unsafe { b2RevoluteJoint_SetMotorSpeed(self.ptr, speed) }
+		unsafe { b2RevoluteJoint_SetMotorSpeed(self.ptr(), speed) }
 	}
 
 	pub fn get_motor_speed(&self) -> Float32 {
-		unsafe { b2RevoluteJoint_GetMotorSpeed(self.ptr) }
+		unsafe { b2RevoluteJoint_GetMotorSpeed(self.ptr()) }
 	}
 
 	pub fn set_max_motor_torque(&self, torque: Float32) {
-		unsafe { b2RevoluteJoint_SetMaxMotorTorque(self.ptr, torque) }
+		unsafe { b2RevoluteJoint_SetMaxMotorTorque(self.ptr(), torque) }
 	}
 
 	pub fn get_max_motor_torque(&self) -> Float32 {
-		unsafe { b2RevoluteJoint_GetMaxMotorTorque(self.ptr) }
+		unsafe { b2RevoluteJoint_GetMaxMotorTorque(self.ptr()) }
 	}
 
 	pub fn get_motor_torque(&self, inv_dt: Float32) -> Float32 {
-		unsafe { b2RevoluteJoint_GetMotorTorque(self.ptr, inv_dt) }
+		unsafe { b2RevoluteJoint_GetMotorTorque(self.ptr(), inv_dt) }
 	}
 
 }
 
 impl Joint for RevoluteJoint {
 	fn get_handle(&self) -> *mut B2Joint {
-		self.ptr as *mut B2Joint
+		unsafe { self.ptr() as *mut _ }
 	}
 
 	fn get_next(&self) -> Self
 	{
 		unsafe {
-			RevoluteJoint { ptr: b2Joint_GetNext(self.get_handle()) as *mut _ }
+			RevoluteJoint::from_raw(b2Joint_GetNext(self.get_handle()) as *mut _)
 		}
 	}
 }

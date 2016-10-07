@@ -74,7 +74,7 @@ pub struct JointEdge
 
 impl JointEdge {
     pub fn other(&self) -> Body {
-        Body { ptr: self.other }
+        unsafe { Body::from_raw(self.other) }
     }
 
 	// TODO: do something other than this...
@@ -102,7 +102,7 @@ impl JointEdge {
 pub trait JointDef<T>: Default {
 	fn joint_type() -> JointType;
 
-	fn create(&self, &mut World) -> T;
+	fn create(&mut self, &mut World) -> T;
 }
 
 pub enum B2Joint {}
@@ -133,12 +133,12 @@ pub trait Joint {
 
 	/// Get the first body attached to this joint.
 	fn get_body_a(&self) -> Body {
-		unsafe { Body { ptr: b2Joint_GetBodyA(self.get_handle()) } }
+		unsafe { Body::from_raw(b2Joint_GetBodyA(self.get_handle())) }
 	}
 
 	/// Get the second body attached to this joint.
 	fn get_body_b(&self) -> Body {
-		unsafe { Body { ptr: b2Joint_GetBodyB(self.get_handle()) } }
+		unsafe { Body::from_raw(b2Joint_GetBodyB(self.get_handle())) }
 	}
 
 	/// Get the anchor point on bodyA in world coordinates.

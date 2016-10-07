@@ -13,18 +13,23 @@ extern {
 /// Small color object for each particle
 #[derive(Clone)]
 pub struct ParticleColor {
-	pub ptr: *mut B2ParticleColor
+	raw: *mut B2ParticleColor,
 }
 
 impl ParticleColor {
+	pub unsafe fn from_raw(raw: *mut B2ParticleColor) -> Self {
+		ParticleColor { raw: raw }
+	}
+
+	pub unsafe fn ptr(&self) -> *mut B2ParticleColor {
+		self.raw
+	}
 
     /// Constructor with four elements: r (red), g (green), b (blue), and a
     /// (opacity).
     /// Each element can be specified 0 to 255.
     pub fn new(r: UInt8, g: UInt8, b: UInt8, a: UInt8) -> ParticleColor {
-        unsafe {
-            ParticleColor { ptr: b2ParticleColor_New(r, g, b, a) }
-        }
+        unsafe { ParticleColor::from_raw(b2ParticleColor_New(r, g, b, a)) }
     }
 
     /// Create a ParticleColor with zero values.
@@ -36,19 +41,14 @@ impl ParticleColor {
     /// buffer isn't allocated by CreateParticle().
     pub fn is_zero(&self) -> bool {
         unsafe {
-            b2ParticleColor_IsZero(self.ptr)
+            b2ParticleColor_IsZero(self.ptr())
         }
     }
-
-    /// Get ParticleColor's raw pointer.
-	pub fn ptr(&self) -> *mut B2ParticleColor {
-		self.ptr
-	}
 
     /// Sets color for current object using the four elements described above.
     pub fn set(&self, r: UInt8, g: UInt8, b: UInt8, a: UInt8) {
         unsafe {
-            b2ParticleColor_Set(self.ptr, r, g, b, a);
+            b2ParticleColor_Set(self.ptr(), r, g, b, a);
         }
     }
 
@@ -57,7 +57,7 @@ impl ParticleColor {
 impl Drop for ParticleColor {
     fn drop(&mut self) {
         unsafe {
-            b2ParticleColor_Delete(self.ptr);
+            b2ParticleColor_Delete(self.ptr());
         }
     }
 }

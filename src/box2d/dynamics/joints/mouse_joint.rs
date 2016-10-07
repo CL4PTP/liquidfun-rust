@@ -67,18 +67,20 @@ impl Default for MouseJointDef {
 impl JointDef<MouseJoint> for MouseJointDef {
 	fn joint_type() -> JointType { JointType::MouseJoint }
 
-	fn create(&self, world: &mut World) -> MouseJoint {
-		unsafe { MouseJoint { ptr: b2MouseJoint_Create(
-			world.ptr,
-			self.user_data,
-			if let Some(ref p) = self.body_a { p.ptr } else { ptr::null_mut() },
-		    if let Some(ref p) = self.body_b { p.ptr } else { ptr::null_mut() },
-		    self.collide_connected,
-			self.target,
-			self.max_force,
-			self.frequency_hz,
-			self.damping_ratio
-		) } }
+	fn create(&mut self, world: &mut World) -> MouseJoint {
+		unsafe {
+			MouseJoint::from_raw(b2MouseJoint_Create(
+				world.ptr(),
+				self.user_data,
+				if let Some(ref mut p) = self.body_a { p.ptr() } else { ptr::null_mut() },
+			    if let Some(ref mut p) = self.body_b { p.ptr() } else { ptr::null_mut() },
+			    self.collide_connected,
+				self.target,
+				self.max_force,
+				self.frequency_hz,
+				self.damping_ratio
+			))
+		}
 	}
 }
 
@@ -109,53 +111,61 @@ extern {
 
 #[derive(Clone, Debug)]
 pub struct MouseJoint {
-	pub ptr: *mut B2MouseJoint
+	raw: *mut B2MouseJoint,
 }
 
 impl MouseJoint {
+	pub unsafe fn from_raw(raw: *mut B2MouseJoint) -> Self {
+		MouseJoint { raw: raw }
+	}
+
+	pub unsafe fn ptr(&self) -> *mut B2MouseJoint {
+		self.raw
+	}
+
 	pub fn set_target(&self, target: &Vec2) {
-		unsafe { b2MouseJoint_SetTarget(self.ptr, target) }
+		unsafe { b2MouseJoint_SetTarget(self.ptr(), target) }
 	}
 
 	pub fn get_target(&self) -> &Vec2 {
-		unsafe { b2MouseJoint_GetTarget(self.ptr) }
+		unsafe { b2MouseJoint_GetTarget(self.ptr()) }
 	}
 
 	pub fn set_max_force(&self, force: Float32) {
-		unsafe { b2MouseJoint_SetMaxForce(self.ptr, force) }
+		unsafe { b2MouseJoint_SetMaxForce(self.ptr(), force) }
 	}
 
 	pub fn get_max_force(&self) -> Float32 {
-		unsafe { b2MouseJoint_GetMaxForce(self.ptr) }
+		unsafe { b2MouseJoint_GetMaxForce(self.ptr()) }
 	}
 
 	pub fn set_frequency(&self, hz: Float32) {
-		unsafe { b2MouseJoint_SetFrequency(self.ptr, hz) }
+		unsafe { b2MouseJoint_SetFrequency(self.ptr(), hz) }
 	}
 
 	pub fn get_frequency(&self) -> Float32 {
-		unsafe { b2MouseJoint_GetFrequency(self.ptr) }
+		unsafe { b2MouseJoint_GetFrequency(self.ptr()) }
 	}
 
 	pub fn set_damping_ratio(&self, ratio: Float32) {
-		unsafe { b2MouseJoint_SetDampingRatio(self.ptr, ratio) }
+		unsafe { b2MouseJoint_SetDampingRatio(self.ptr(), ratio) }
 	}
 
 	pub fn get_damping_ratio(&self) -> Float32 {
-		unsafe { b2MouseJoint_GetDampingRatio(self.ptr) }
+		unsafe { b2MouseJoint_GetDampingRatio(self.ptr()) }
 	}
 }
 
 
 impl Joint for MouseJoint {
 	fn get_handle(&self) -> *mut B2Joint {
-		self.ptr as *mut B2Joint
+		unsafe { self.ptr() as *mut _ }
 	}
 
 	fn get_next(&self) -> Self
 	{
 		unsafe {
-			MouseJoint { ptr: b2Joint_GetNext(self.get_handle()) as *mut _ }
+			MouseJoint::from_raw(b2Joint_GetNext(self.get_handle()) as *mut _)
 		}
 	}
 }

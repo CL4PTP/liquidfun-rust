@@ -76,21 +76,23 @@ impl Default for PulleyJointDef {
 impl JointDef<PulleyJoint> for PulleyJointDef {
 	fn joint_type() -> JointType { JointType::PulleyJoint }
 
-	fn create(&self, world: &mut World) -> PulleyJoint {
-		unsafe { PulleyJoint { ptr: b2PulleyJoint_Create(
-			world.ptr,
-			self.user_data,
-			if let Some(ref p) = self.body_a { p.ptr } else { ptr::null_mut() },
-		    if let Some(ref p) = self.body_b { p.ptr } else { ptr::null_mut() },
-		    self.collide_connected,
-			self.ground_anchor_a,
-			self.ground_anchor_b,
-			self.local_anchor_a,
-			self.local_anchor_b,
-			self.length_a,
-			self.length_b,
-			self.ratio,
-		) } }
+	fn create(&mut self, world: &mut World) -> PulleyJoint {
+		unsafe {
+			PulleyJoint::from_raw(b2PulleyJoint_Create(
+				world.ptr(),
+				self.user_data,
+				if let Some(ref mut p) = self.body_a { p.ptr() } else { ptr::null_mut() },
+			    if let Some(ref mut p) = self.body_b { p.ptr() } else { ptr::null_mut() },
+			    self.collide_connected,
+				self.ground_anchor_a,
+				self.ground_anchor_b,
+				self.local_anchor_a,
+				self.local_anchor_b,
+				self.length_a,
+				self.length_b,
+				self.ratio,
+			))
+		}
 	}
 }
 
@@ -123,49 +125,57 @@ extern {
 
 #[derive(Clone, Debug)]
 pub struct PulleyJoint {
-	pub ptr: *mut B2PulleyJoint
+	raw: *mut B2PulleyJoint,
 }
 
 impl PulleyJoint {
+	pub unsafe fn from_raw(raw: *mut B2PulleyJoint) -> Self {
+		PulleyJoint { raw: raw }
+	}
+
+	pub unsafe fn ptr(&self) -> *mut B2PulleyJoint {
+		self.raw
+	}
+
 	pub fn get_ground_anchor_a(&self) -> Vec2 {
-		unsafe { b2PulleyJoint_GetGroundAnchorA(self.ptr) }
+		unsafe { b2PulleyJoint_GetGroundAnchorA(self.ptr()) }
 	}
 
 	pub fn get_ground_anchor_b(&self) -> Vec2 {
-		unsafe { b2PulleyJoint_GetGroundAnchorB(self.ptr) }
+		unsafe { b2PulleyJoint_GetGroundAnchorB(self.ptr()) }
 	}
 
 	pub fn get_length_a(&self) -> Float32 {
-		unsafe { b2PulleyJoint_GetLengthA(self.ptr) }
+		unsafe { b2PulleyJoint_GetLengthA(self.ptr()) }
 	}
 
 	pub fn get_length_b(&self) -> Float32 {
-		unsafe { b2PulleyJoint_GetLengthB(self.ptr) }
+		unsafe { b2PulleyJoint_GetLengthB(self.ptr()) }
 	}
 
 	pub fn get_ratio(&self) -> Float32 {
-		unsafe { b2PulleyJoint_GetRatio(self.ptr) }
+		unsafe { b2PulleyJoint_GetRatio(self.ptr()) }
 	}
 
 	pub fn get_current_length_a(&self) -> Float32 {
-		unsafe { b2PulleyJoint_GetCurrentLengthA(self.ptr) }
+		unsafe { b2PulleyJoint_GetCurrentLengthA(self.ptr()) }
 	}
 
 	pub fn get_current_length_b(&self) -> Float32 {
-		unsafe { b2PulleyJoint_GetCurrentLengthB(self.ptr) }
+		unsafe { b2PulleyJoint_GetCurrentLengthB(self.ptr()) }
 	}
 
 }
 
 impl Joint for PulleyJoint {
 	fn get_handle(&self) -> *mut B2Joint {
-		self.ptr as *mut B2Joint
+		unsafe { self.ptr() as *mut _ }
 	}
 
 	fn get_next(&self) -> Self
 	{
 		unsafe {
-			PulleyJoint { ptr: b2Joint_GetNext(self.get_handle()) as *mut _ }
+			PulleyJoint::from_raw(b2Joint_GetNext(self.get_handle()) as *mut _)
 		}
 	}
 }

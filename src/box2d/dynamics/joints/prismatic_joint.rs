@@ -88,24 +88,26 @@ impl Default for PrismaticJointDef {
 impl JointDef<PrismaticJoint> for PrismaticJointDef {
 	fn joint_type() -> JointType { JointType::PrismaticJoint }
 
-	fn create(&self, world: &mut World) -> PrismaticJoint {
-		unsafe { PrismaticJoint { ptr: b2PrismaticJoint_Create(
-			world.ptr,
-			self.user_data,
-			if let Some(ref p) = self.body_a { p.ptr } else { ptr::null_mut() },
-		    if let Some(ref p) = self.body_b { p.ptr } else { ptr::null_mut() },
-		    self.collide_connected,
-			self.local_anchor_a,
-			self.local_anchor_b,
-			self.local_axis_a,
-			self.reference_angle,
-			self.enable_limit,
-			self.lower_translation,
-			self.upper_translation,
-			self.enable_motor,
-			self.max_motor_force,
-			self.motor_speed,
-		) } }
+	fn create(&mut self, world: &mut World) -> PrismaticJoint {
+		unsafe {
+			PrismaticJoint::from_raw(b2PrismaticJoint_Create(
+				world.ptr(),
+				self.user_data,
+				if let Some(ref mut p) = self.body_a { p.ptr() } else { ptr::null_mut() },
+			    if let Some(ref mut p) = self.body_b { p.ptr() } else { ptr::null_mut() },
+			    self.collide_connected,
+				self.local_anchor_a,
+				self.local_anchor_b,
+				self.local_axis_a,
+				self.reference_angle,
+				self.enable_limit,
+				self.lower_translation,
+				self.upper_translation,
+				self.enable_motor,
+				self.max_motor_force,
+				self.motor_speed,
+			))
+		}
 	}
 }
 
@@ -150,72 +152,80 @@ extern {
 
 #[derive(Clone, Debug)]
 pub struct PrismaticJoint {
-	pub ptr: *mut B2PrismaticJoint
+	raw: *mut B2PrismaticJoint,
 }
 
 impl PrismaticJoint {
+	pub unsafe fn from_raw(raw: *mut B2PrismaticJoint) -> Self {
+		PrismaticJoint { raw: raw }
+	}
+
+	pub unsafe fn ptr(&self) -> *mut B2PrismaticJoint {
+		self.raw
+	}
+
 	pub fn get_local_axis_a(&self) -> &Vec2 {
-		unsafe { b2PrismaticJoint_GetLocalAxisA(self.ptr) }
+		unsafe { b2PrismaticJoint_GetLocalAxisA(self.ptr()) }
 	}
 
 	pub fn get_reference_angle(&self) -> Float32 {
-		unsafe { b2PrismaticJoint_GetReferenceAngle(self.ptr) }
+		unsafe { b2PrismaticJoint_GetReferenceAngle(self.ptr()) }
 	}
 
 	pub fn get_joint_translation(&self) -> Float32 {
-		unsafe { b2PrismaticJoint_GetJointTranslation(self.ptr) }
+		unsafe { b2PrismaticJoint_GetJointTranslation(self.ptr()) }
 	}
 
 	pub fn get_joint_speed(&self) -> Float32 {
-		unsafe { b2PrismaticJoint_GetJointSpeed(self.ptr) }
+		unsafe { b2PrismaticJoint_GetJointSpeed(self.ptr()) }
 	}
 
 	pub fn is_limit_enabled(&self) -> bool {
-		unsafe { b2PrismaticJoint_IsLimitEnabled(self.ptr) }
+		unsafe { b2PrismaticJoint_IsLimitEnabled(self.ptr()) }
 	}
 
 	pub fn enable_limit(&self, flag: bool) {
-		unsafe { b2PrismaticJoint_EnableLimit(self.ptr, flag) }
+		unsafe { b2PrismaticJoint_EnableLimit(self.ptr(), flag) }
 	}
 
 	pub fn get_lower_limit(&self) -> Float32 {
-		unsafe { b2PrismaticJoint_GetLowerLimit(self.ptr) }
+		unsafe { b2PrismaticJoint_GetLowerLimit(self.ptr()) }
 	}
 
 	pub fn get_upper_limit(&self) -> Float32 {
-		unsafe { b2PrismaticJoint_GetUpperLimit(self.ptr) }
+		unsafe { b2PrismaticJoint_GetUpperLimit(self.ptr()) }
 	}
 
 	pub fn set_limits(&self, lower: Float32, upper: Float32) {
-		unsafe { b2PrismaticJoint_SetLimits(self.ptr, lower, upper) }
+		unsafe { b2PrismaticJoint_SetLimits(self.ptr(), lower, upper) }
 	}
 
 	pub fn is_motor_enabled(&self) -> bool {
-		unsafe { b2PrismaticJoint_IsMotorEnabled(self.ptr) }
+		unsafe { b2PrismaticJoint_IsMotorEnabled(self.ptr()) }
 	}
 
 	pub fn enable_motor(&self, flag: bool) {
-		unsafe { b2PrismaticJoint_EnableMotor(self.ptr, flag) }
+		unsafe { b2PrismaticJoint_EnableMotor(self.ptr(), flag) }
 	}
 
 	pub fn set_motor_speed(&self, speed: Float32) {
-		unsafe { b2PrismaticJoint_SetMotorSpeed(self.ptr, speed) }
+		unsafe { b2PrismaticJoint_SetMotorSpeed(self.ptr(), speed) }
 	}
 
 	pub fn get_motor_speed(&self) -> Float32 {
-		unsafe { b2PrismaticJoint_GetMotorSpeed(self.ptr) }
+		unsafe { b2PrismaticJoint_GetMotorSpeed(self.ptr()) }
 	}
 
 	pub fn set_max_motor_force(&self, force: Float32) {
-		unsafe { b2PrismaticJoint_SetMaxMotorForce(self.ptr, force) }
+		unsafe { b2PrismaticJoint_SetMaxMotorForce(self.ptr(), force) }
 	}
 
 	pub fn get_max_motor_force(&self) -> Float32 {
-		unsafe { b2PrismaticJoint_GetMaxMotorForce(self.ptr) }
+		unsafe { b2PrismaticJoint_GetMaxMotorForce(self.ptr()) }
 	}
 
 	pub fn get_motor_force(&self, inv_dt: Float32) -> Float32 {
-		unsafe { b2PrismaticJoint_GetMotorForce(self.ptr, inv_dt) }
+		unsafe { b2PrismaticJoint_GetMotorForce(self.ptr(), inv_dt) }
 	}
 
 }
@@ -223,13 +233,13 @@ impl PrismaticJoint {
 
 impl Joint for PrismaticJoint {
 	fn get_handle(&self) -> *mut B2Joint {
-		self.ptr as *mut B2Joint
+		unsafe { self.ptr() as *mut _ }
 	}
 
 	fn get_next(&self) -> Self
 	{
 		unsafe {
-			PrismaticJoint { ptr: b2Joint_GetNext(self.get_handle()) as *mut _ }
+			PrismaticJoint::from_raw(b2Joint_GetNext(self.get_handle()) as *mut _)
 		}
 	}
 }

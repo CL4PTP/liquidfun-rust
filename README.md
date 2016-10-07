@@ -61,12 +61,13 @@ The LiquidFun Hello World example compiles and runs. More bindings will be added
 #### TODO:
 
 - [ ] Determine whether C bindings for upcasts/downcasts are really necessary
+- [ ] Make sure that `*mut _` in wrapped structs are really okay (because they can trivially alias)
 - [ ] Callbacks
 - [ ] Fixture RayCast
 - [ ] ContactFilter
 - [ ] Queries
 - [ ] Rope
-- [ ] Some sort of magic to generate Rust `const`s based on the contents of `b2Settings.h` (cause they're used as fixed array bounds in must be `const`)
+- [ ] Some sort of magic to generate Rust `const`s based on the contents of `b2Settings.h` (cause they're used as fixed array bounds and must be `const`)
 - [ ] General API fleshing
 - [ ] Other stuff?
 

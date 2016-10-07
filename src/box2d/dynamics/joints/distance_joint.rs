@@ -75,19 +75,21 @@ impl Default for DistanceJointDef {
 impl JointDef<DistanceJoint> for DistanceJointDef {
 	fn joint_type() -> JointType { JointType::DistanceJoint }
 
-	fn create(&self, world: &mut World) -> DistanceJoint {
-		unsafe { DistanceJoint { ptr: b2DistanceJoint_Create(
-			world.ptr,
-			self.user_data,
-			if let Some(ref p) = self.body_a { p.ptr } else { ptr::null_mut() },
-		    if let Some(ref p) = self.body_b { p.ptr } else { ptr::null_mut() },
-		    self.collide_connected,
-            self.local_anchor_a,
-        	self.local_anchor_b,
-        	self.length,
-        	self.frequency_hz,
-        	self.damping_ratio,
-		) } }
+	fn create(&mut self, world: &mut World) -> DistanceJoint {
+		unsafe {
+			DistanceJoint::from_raw(b2DistanceJoint_Create(
+				world.ptr(),
+				self.user_data,
+				if let Some(ref mut p) = self.body_a { p.ptr() } else { ptr::null_mut() },
+			    if let Some(ref mut p) = self.body_b { p.ptr() } else { ptr::null_mut() },
+			    self.collide_connected,
+	            self.local_anchor_a,
+	        	self.local_anchor_b,
+	        	self.length,
+	        	self.frequency_hz,
+	        	self.damping_ratio,
+			))
+		}
 	}
 }
 
@@ -119,53 +121,61 @@ extern {
 
 #[derive(Clone, Debug)]
 pub struct DistanceJoint {
-	pub ptr: *mut B2DistanceJoint
+	raw: *mut B2DistanceJoint
 }
 
 impl DistanceJoint {
+	pub unsafe fn from_raw(raw: *mut B2DistanceJoint) -> Self {
+		DistanceJoint { raw: raw }
+	}
+
+	pub unsafe fn ptr(&self) -> *mut B2DistanceJoint {
+		self.raw
+	}
+
     pub fn get_local_anchor_a(&self) -> &Vec2 {
-        unsafe { b2DistanceJoint_GetLocalAnchorA(self.ptr) }
+        unsafe { b2DistanceJoint_GetLocalAnchorA(self.ptr()) }
     }
 
     pub fn get_local_anchor_b(&self) -> &Vec2 {
-        unsafe { b2DistanceJoint_GetLocalAnchorB(self.ptr) }
+        unsafe { b2DistanceJoint_GetLocalAnchorB(self.ptr()) }
     }
 
     pub fn set_length(&self, length: Float32) {
-        unsafe { b2DistanceJoint_SetLength(self.ptr, length) }
+        unsafe { b2DistanceJoint_SetLength(self.ptr(), length) }
     }
 
     pub fn get_length(&self) -> Float32 {
-        unsafe { b2DistanceJoint_GetLength(self.ptr) }
+        unsafe { b2DistanceJoint_GetLength(self.ptr()) }
     }
 
     pub fn set_frequency(&self, hz: Float32) {
-        unsafe { b2DistanceJoint_SetFrequency(self.ptr, hz) }
+        unsafe { b2DistanceJoint_SetFrequency(self.ptr(), hz) }
     }
 
     pub fn get_frequency(&self) -> Float32 {
-        unsafe { b2DistanceJoint_GetFrequency(self.ptr) }
+        unsafe { b2DistanceJoint_GetFrequency(self.ptr()) }
     }
 
     pub fn set_damping_ratio(&self, ratio: Float32) {
-        unsafe { b2DistanceJoint_SetDampingRatio(self.ptr, ratio) }
+        unsafe { b2DistanceJoint_SetDampingRatio(self.ptr(), ratio) }
     }
 
     pub fn get_damping_ratio(&self) -> Float32 {
-        unsafe { b2DistanceJoint_GetDampingRatio(self.ptr) }
+        unsafe { b2DistanceJoint_GetDampingRatio(self.ptr()) }
     }
 
 }
 
 impl Joint for DistanceJoint {
 	fn get_handle(&self) -> *mut B2Joint {
-		self.ptr as *mut B2Joint
+		unsafe { self.ptr() as *mut _ }
 	}
 
 	fn get_next(&self) -> Self
 	{
 		unsafe {
-			DistanceJoint { ptr: b2Joint_GetNext(self.get_handle()) as *mut _ }
+			DistanceJoint::from_raw(b2Joint_GetNext(self.get_handle()) as *mut _)
 		}
 	}
 }

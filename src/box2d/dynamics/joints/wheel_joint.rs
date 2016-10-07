@@ -80,22 +80,24 @@ impl Default for WheelJointDef {
 impl JointDef<WheelJoint> for WheelJointDef {
 	fn joint_type() -> JointType { JointType::WheelJoint }
 
-	fn create(&self, world: &mut World) -> WheelJoint {
-		unsafe { WheelJoint { ptr: b2WheelJoint_Create(
-			world.ptr,
-			self.user_data,
-			if let Some(ref p) = self.body_a { p.ptr } else { ptr::null_mut() },
-		    if let Some(ref p) = self.body_b { p.ptr } else { ptr::null_mut() },
-		    self.collide_connected,
-			self.local_anchor_a,
-			self.local_anchor_b,
-			self.local_axis_a,
-			self.enable_motor,
-			self.max_motor_torque,
-			self.motor_speed,
-			self.frequency_hz,
-			self.damping_ratio,
-		) } }
+	fn create(&mut self, world: &mut World) -> WheelJoint {
+		unsafe {
+			WheelJoint::from_raw(b2WheelJoint_Create(
+				world.ptr(),
+				self.user_data,
+				if let Some(ref mut p) = self.body_a { p.ptr() } else { ptr::null_mut() },
+			    if let Some(ref mut p) = self.body_b { p.ptr() } else { ptr::null_mut() },
+			    self.collide_connected,
+				self.local_anchor_a,
+				self.local_anchor_b,
+				self.local_axis_a,
+				self.enable_motor,
+				self.max_motor_torque,
+				self.motor_speed,
+				self.frequency_hz,
+				self.damping_ratio,
+			))
+		}
 	}
 }
 
@@ -138,86 +140,93 @@ extern {
 
 #[derive(Clone, Debug)]
 pub struct WheelJoint {
-	pub ptr: *mut B2WheelJoint
+	raw: *mut B2WheelJoint
 }
 
 impl WheelJoint {
+	pub unsafe fn from_raw(raw: *mut B2WheelJoint) -> Self {
+		WheelJoint { raw: raw }
+	}
+
+	pub unsafe fn ptr(&self) -> *mut B2WheelJoint {
+		self.raw
+	}
+
 	pub fn get_local_anchor_a(&self) -> &Vec2 {
-		unsafe { b2WheelJoint_GetLocalAnchorA(self.ptr) }
+		unsafe { b2WheelJoint_GetLocalAnchorA(self.ptr()) }
 	}
 
 	pub fn get_local_anchor_b(&self) -> &Vec2 {
-		unsafe { b2WheelJoint_GetLocalAnchorB(self.ptr) }
+		unsafe { b2WheelJoint_GetLocalAnchorB(self.ptr()) }
 	}
 
 	pub fn get_local_axis_a(&self) -> &Vec2 {
-		unsafe { b2WheelJoint_GetLocalAxisA(self.ptr) }
+		unsafe { b2WheelJoint_GetLocalAxisA(self.ptr()) }
 	}
 
 	pub fn get_joint_translation(&self) -> Float32 {
-		unsafe { b2WheelJoint_GetJointTranslation(self.ptr) }
+		unsafe { b2WheelJoint_GetJointTranslation(self.ptr()) }
 	}
 
 	pub fn get_joint_speed(&self) -> Float32 {
-		unsafe { b2WheelJoint_GetJointSpeed(self.ptr) }
+		unsafe { b2WheelJoint_GetJointSpeed(self.ptr()) }
 	}
 
 	pub fn is_motor_enabled(&self) -> bool {
-		unsafe { b2WheelJoint_IsMotorEnabled(self.ptr) }
+		unsafe { b2WheelJoint_IsMotorEnabled(self.ptr()) }
 	}
 
 	pub fn enable_motor(&self, flag: bool) {
-		unsafe { b2WheelJoint_EnableMotor(self.ptr, flag) }
+		unsafe { b2WheelJoint_EnableMotor(self.ptr(), flag) }
 	}
 
 	pub fn set_motor_speed(&self, speed: Float32) {
-		unsafe { b2WheelJoint_SetMotorSpeed(self.ptr, speed) }
+		unsafe { b2WheelJoint_SetMotorSpeed(self.ptr(), speed) }
 	}
 
 	pub fn get_motor_speed(&self) -> Float32 {
-		unsafe { b2WheelJoint_GetMotorSpeed(self.ptr) }
+		unsafe { b2WheelJoint_GetMotorSpeed(self.ptr()) }
 	}
 
 	pub fn set_max_motor_torque(&self, torque: Float32) {
-		unsafe { b2WheelJoint_SetMaxMotorTorque(self.ptr, torque) }
+		unsafe { b2WheelJoint_SetMaxMotorTorque(self.ptr(), torque) }
 	}
 
 	pub fn get_max_motor_torque(&self) -> Float32 {
-		unsafe { b2WheelJoint_GetMaxMotorTorque(self.ptr) }
+		unsafe { b2WheelJoint_GetMaxMotorTorque(self.ptr()) }
 	}
 
 	pub fn get_motor_torque(&self, inv_dt: Float32) -> Float32 {
-		unsafe { b2WheelJoint_GetMotorTorque(self.ptr, inv_dt) }
+		unsafe { b2WheelJoint_GetMotorTorque(self.ptr(), inv_dt) }
 	}
 
 	pub fn set_spring_frequency_hz(&self, hz: Float32) {
-		unsafe { b2WheelJoint_SetSpringFrequencyHz(self.ptr, hz) }
+		unsafe { b2WheelJoint_SetSpringFrequencyHz(self.ptr(), hz) }
 	}
 
 	pub fn get_spring_frequency_hz(&self) -> Float32 {
-		unsafe { b2WheelJoint_GetSpringFrequencyHz(self.ptr) }
+		unsafe { b2WheelJoint_GetSpringFrequencyHz(self.ptr()) }
 	}
 
 	pub fn set_spring_damping_ratio(&self, ratio: Float32) {
-		unsafe { b2WheelJoint_SetSpringDampingRatio(self.ptr, ratio) }
+		unsafe { b2WheelJoint_SetSpringDampingRatio(self.ptr(), ratio) }
 	}
 
 	pub fn get_spring_damping_ratio(&self) -> Float32 {
-		unsafe { b2WheelJoint_GetSpringDampingRatio(self.ptr) }
+		unsafe { b2WheelJoint_GetSpringDampingRatio(self.ptr()) }
 	}
-
 
 }
 
 impl Joint for WheelJoint {
 	fn get_handle(&self) -> *mut B2Joint {
-		self.ptr as *mut B2Joint
+		unsafe { self.ptr() as *mut _ }
 	}
 
 	fn get_next(&self) -> Self
 	{
 		unsafe {
-			WheelJoint { ptr: b2Joint_GetNext(self.get_handle()) as *mut _ }
+			WheelJoint::from_raw(b2Joint_GetNext(self.get_handle()) as *mut _)
 		}
 	}
 }

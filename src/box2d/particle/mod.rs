@@ -124,11 +124,11 @@ impl B2ParticleDef {
 		 	flags: pd.flags.bits(),
 			position: pd.position.clone(),
 			velocity: pd.velocity.clone(),
-		 	color: pd.color.ptr(),
+		 	color: unsafe { pd.color.ptr() },
 			lifetime: pd.lifetime,
 			user_data: pd.user_data,
 			group: match pd.group {
-				Some(ref g) => g.ptr(),
+				Some(ref g) => unsafe { g.ptr() },
 				None => ptr::null_mut()
 			}
 		}

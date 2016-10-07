@@ -79,19 +79,21 @@ impl Default for MotorJointDef {
 impl JointDef<MotorJoint> for MotorJointDef {
 	fn joint_type() -> JointType { JointType::MotorJoint }
 
-	fn create(&self, world: &mut World) -> MotorJoint {
-		unsafe { MotorJoint { ptr: b2MotorJoint_Create(
-			world.ptr,
-			self.user_data,
-			if let Some(ref p) = self.body_a { p.ptr } else { ptr::null_mut() },
-		    if let Some(ref p) = self.body_b { p.ptr } else { ptr::null_mut() },
-		    self.collide_connected,
-			self.linear_offset,
-			self.angular_offset,
-			self.max_force,
-			self.max_torque,
-			self.correction_factor,
-		) } }
+	fn create(&mut self, world: &mut World) -> MotorJoint {
+		unsafe {
+			MotorJoint::from_raw(b2MotorJoint_Create(
+				world.ptr(),
+				self.user_data,
+				if let Some(ref mut p) = self.body_a { p.ptr() } else { ptr::null_mut() },
+			    if let Some(ref mut p) = self.body_b { p.ptr() } else { ptr::null_mut() },
+			    self.collide_connected,
+				self.linear_offset,
+				self.angular_offset,
+				self.max_force,
+				self.max_torque,
+				self.correction_factor,
+			))
+		}
 	}
 }
 
@@ -123,53 +125,61 @@ extern {
 
 #[derive(Clone, Debug)]
 pub struct MotorJoint {
-	pub ptr: *mut B2MotorJoint
+	raw: *mut B2MotorJoint,
 }
 
 impl MotorJoint {
+	pub unsafe fn from_raw(raw: *mut B2MotorJoint) -> Self {
+		MotorJoint { raw: raw }
+	}
+
+	pub unsafe fn ptr(&self) -> *mut B2MotorJoint {
+		self.raw
+	}
+
     pub fn get_local_anchor_a(&self) -> &Vec2 {
-        unsafe { b2MotorJoint_GetLocalAnchorA(self.ptr) }
+        unsafe { b2MotorJoint_GetLocalAnchorA(self.ptr()) }
     }
 
     pub fn get_local_anchor_b(&self) -> &Vec2 {
-        unsafe { b2MotorJoint_GetLocalAnchorB(self.ptr) }
+        unsafe { b2MotorJoint_GetLocalAnchorB(self.ptr()) }
     }
 
     pub fn set_length(&self, length: Float32) {
-        unsafe { b2MotorJoint_SetLength(self.ptr, length) }
+        unsafe { b2MotorJoint_SetLength(self.ptr(), length) }
     }
 
     pub fn get_length(&self) -> Float32 {
-        unsafe { b2MotorJoint_GetLength(self.ptr) }
+        unsafe { b2MotorJoint_GetLength(self.ptr()) }
     }
 
     pub fn set_frequency(&self, hz: Float32) {
-        unsafe { b2MotorJoint_SetFrequency(self.ptr, hz) }
+        unsafe { b2MotorJoint_SetFrequency(self.ptr(), hz) }
     }
 
     pub fn get_frequency(&self) -> Float32 {
-        unsafe { b2MotorJoint_GetFrequency(self.ptr) }
+        unsafe { b2MotorJoint_GetFrequency(self.ptr()) }
     }
 
     pub fn set_damping_ratio(&self, ratio: Float32) {
-        unsafe { b2MotorJoint_SetDampingRatio(self.ptr, ratio) }
+        unsafe { b2MotorJoint_SetDampingRatio(self.ptr(), ratio) }
     }
 
     pub fn get_damping_ratio(&self) -> Float32 {
-        unsafe { b2MotorJoint_GetDampingRatio(self.ptr) }
+        unsafe { b2MotorJoint_GetDampingRatio(self.ptr()) }
     }
 
 }
 
 impl Joint for MotorJoint {
 	fn get_handle(&self) -> *mut B2Joint {
-		self.ptr as *mut B2Joint
+		unsafe { self.ptr() as *mut _ }
 	}
 
 	fn get_next(&self) -> Self
 	{
 		unsafe {
-			MotorJoint { ptr: b2Joint_GetNext(self.get_handle()) as *mut _ }
+			MotorJoint::from_raw(b2Joint_GetNext(self.get_handle()) as *mut _)
 		}
 	}
 }

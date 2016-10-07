@@ -22,48 +22,55 @@ extern {
 
 #[derive(Clone, Debug)]
 pub struct ParticleContact {
-    pub ptr: *mut B2ParticleContact,
+    raw: *mut B2ParticleContact,
 }
 
 impl ParticleContact {
+	pub unsafe fn from_raw(raw: *mut B2ParticleContact) -> Self {
+		ParticleContact { raw: raw }
+	}
+
+	pub unsafe fn ptr(&self) -> *mut B2ParticleContact {
+		self.raw
+	}
     pub fn set_indices(&self, a: Int32, b: Int32) {
-        unsafe { b2ParticleContact_SetIndices(self.ptr, a, b) }
+        unsafe { b2ParticleContact_SetIndices(self.ptr(), a, b) }
     }
 
     pub fn set_weight(&self, w: Float32) {
-        unsafe { b2ParticleContact_SetWeight(self.ptr, w) }
+        unsafe { b2ParticleContact_SetWeight(self.ptr(), w) }
     }
 
     pub fn set_normal(&self, n: &Vec2) {
-        unsafe { b2ParticleContact_SetNormal(self.ptr, n) }
+        unsafe { b2ParticleContact_SetNormal(self.ptr(), n) }
     }
 
     pub fn set_flags(&self, f: UInt32) {
-        unsafe { b2ParticleContact_SetFlags(self.ptr, f) }
+        unsafe { b2ParticleContact_SetFlags(self.ptr(), f) }
     }
 
     pub fn get_index_a(&self) -> Int32 {
-        unsafe { b2ParticleContact_GetIndexA(self.ptr) }
+        unsafe { b2ParticleContact_GetIndexA(self.ptr()) }
     }
 
     pub fn get_index_b(&self) -> Int32 {
-        unsafe { b2ParticleContact_GetIndexB(self.ptr) }
+        unsafe { b2ParticleContact_GetIndexB(self.ptr()) }
     }
 
     pub fn get_weight(&self) -> Float32 {
-        unsafe { b2ParticleContact_GetWeight(self.ptr) }
+        unsafe { b2ParticleContact_GetWeight(self.ptr()) }
     }
 
     pub fn get_normal(&self) -> &Vec2 {
-        unsafe { b2ParticleContact_GetNormal(self.ptr) }
+        unsafe { b2ParticleContact_GetNormal(self.ptr()) }
     }
 
     pub fn get_flags(&self) -> UInt32 {
-        unsafe { b2ParticleContact_GetFlags(self.ptr) }
+        unsafe { b2ParticleContact_GetFlags(self.ptr()) }
     }
 
     pub fn approximately_equal(&self, rhs: &Self) -> bool {
-        unsafe { b2ParticleContact_ApproximatelyEqual(self.ptr, rhs.ptr) }
+        unsafe { b2ParticleContact_ApproximatelyEqual(self.ptr(), rhs.ptr()) }
     }
 }
 
@@ -92,11 +99,11 @@ pub struct ParticleBodyContact
 
 impl ParticleBodyContact {
     pub fn body(&self) -> Body {
-        Body { ptr: self.body }
+        unsafe { Body::from_raw(self.body) }
     }
 
     pub fn fixture(&self) -> Fixture {
-        Fixture { ptr: self.fixture }
+        unsafe { Fixture::from_raw(self.fixture) }
     }
 }
 
@@ -241,10 +248,17 @@ extern {
 
 #[derive(Clone, Debug)]
 pub struct ParticleSystem {
-    pub ptr: *mut B2ParticleSystem,
+    raw: *mut B2ParticleSystem,
 }
 
 impl ParticleSystem {
+	pub unsafe fn from_raw(raw: *mut B2ParticleSystem) -> Self {
+		ParticleSystem { raw: raw }
+	}
+
+	pub unsafe fn ptr(&self) -> *mut B2ParticleSystem {
+		self.raw
+	}
 
     /// Create a particle whose properties have been defined.
     /// No reference to the definition is retained.
@@ -254,53 +268,43 @@ impl ParticleSystem {
     /// @warning This function is locked during callbacks.
     /// @return the index of the particle.
     pub fn create_particle(&self, pd: &ParticleDef) -> Int32 {
-        unsafe {
-            b2ParticleSystem_CreateParticle(self.ptr, &B2ParticleDef::from(pd))
-        }
+        unsafe { b2ParticleSystem_CreateParticle(self.ptr(), &B2ParticleDef::from(pd)) }
     }
 
     /// Destroy a particle.
     /// The particle is removed after the next simulation step (see
     /// b2World::Step()).
     pub fn destroy_particle(&self, index: Int32) {
-        unsafe {
-            b2ParticleSystem_DestroyParticle(self.ptr, index);
-        }
+        unsafe { b2ParticleSystem_DestroyParticle(self.ptr(), index); }
     }
 
     /// Get the number of particles.
     pub fn get_particle_count(&self) -> Int32 {
-        unsafe {
-            b2ParticleSystem_GetParticleCount(self.ptr)
-        }
+        unsafe { b2ParticleSystem_GetParticleCount(self.ptr()) }
     }
 
     /// Get flags for a particle. See the ParticleFlags struct.
     pub fn get_particle_flags(&self, index: Int32) -> Option<ParticleFlags> {
-        unsafe {
-            ParticleFlags::from_bits(b2ParticleSystem_GetParticleFlags(self.ptr, index))
-        }
+        unsafe { ParticleFlags::from_bits(b2ParticleSystem_GetParticleFlags(self.ptr(), index)) }
     }
 
     /// Get the next particle-system in the world's particle-system list.
     pub fn get_next(&self) -> Option<ParticleSystem> {
-        let ptr: *mut B2ParticleSystem;
-
         unsafe {
-            ptr = b2ParticleSystem_GetNext(self.ptr);
-        }
+            let ptr = b2ParticleSystem_GetNext(self.ptr());
 
-        if ptr.is_null() {
-            None
-        } else {
-            Some(ParticleSystem { ptr: ptr })
+            if ptr.is_null() {
+                None
+            } else {
+                Some(ParticleSystem::from_raw(ptr ))
+            }
         }
     }
 
     /// Get the position of each particle
     pub fn get_position_buffer(&self) -> &[Vec2] {
         unsafe {
-            slice::from_raw_parts(b2ParticleSystem_GetPositionBuffer(self.ptr), self.get_particle_count() as usize)
+            slice::from_raw_parts(b2ParticleSystem_GetPositionBuffer(self.ptr()), self.get_particle_count() as usize)
         }
     }
 

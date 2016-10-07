@@ -29,24 +29,31 @@ extern {
 /// and asynchronous queries. The world also contains efficient memory
 /// management facilities.
 pub struct World {
-	pub ptr: *mut B2World,
+	raw: *mut B2World,
 }
 
 impl World {
+	pub unsafe fn from_raw(raw: *mut B2World) -> Self {
+		World { raw: raw }
+	}
+
+	pub unsafe fn ptr(&self) -> *mut B2World {
+		self.raw
+	}
 
     /// Construct a world object.
     /// @param gravity the world gravity vector.
     pub fn new(gravity: &Vec2) -> World {
-        unsafe {
-            World { ptr: b2World_New(gravity) }
-        }
+        unsafe { World::from_raw(b2World_New(gravity)) }
     }
 
+    /// Register a contact event listener. The listener is owned by you and must
+	/// remain in scope.
     pub fn set_contact_listener<C: ContactListener>(&mut self, listener: &mut C) {
         let mut glue = ContactListenerGlue::new();
         glue.use_with(listener);
 
-        unsafe { b2World_SetContactListener(self.ptr, glue.ptr) }
+        unsafe { b2World_SetContactListener(self.ptr(), glue.ptr()) }
     }
 
     /// Create a rigid body given a definition. No reference to the definition
@@ -54,14 +61,14 @@ impl World {
     /// @warning This function is locked during callbacks.
     pub fn create_body(&mut self, def: &BodyDef) -> Body {
         unsafe {
-            Body { ptr: b2World_CreateBody(self.ptr, def) }
+            Body::from_raw(b2World_CreateBody(self.ptr(), def))
         }
     }
 
     /// Create a joint to constrain bodies together. No reference to the definition
 	/// is retained. This may cause the connected bodies to cease colliding.
 	/// @warning This function is locked during callbacks.
-    pub fn create_joint<J, JD>(&mut self, jd: &JD) -> J
+    pub fn create_joint<J, JD>(&mut self, jd: &mut JD) -> J
         where JD: joints::JointDef<J>
     {
         jd.create(self)
@@ -71,38 +78,31 @@ impl World {
     /// definition is retained.
     /// @warning This function is locked during callbacks.
     pub fn create_particle_system(&self, def: &ParticleSystemDef) -> ParticleSystem {
-        unsafe {
-            ParticleSystem { ptr: b2World_CreateParticleSystem(self.ptr, def) }
-        }
+        unsafe { ParticleSystem::from_raw(b2World_CreateParticleSystem(self.ptr(), def)) }
     }
 
     /// Get the number of bodies.
     pub fn get_body_count(&self) -> i32 {
-        unsafe {
-            b2World_GetBodyCount(self.ptr)
-        }
+        unsafe { b2World_GetBodyCount(self.ptr()) }
     }
 
     /// Get the number of joints.
     pub fn get_joint_count(&self) -> i32 {
-        unsafe {
-            b2World_GetJointCount(self.ptr)
-        }
+        unsafe { b2World_GetJointCount(self.ptr()) }
     }
 
     /// Get the world body list. With the returned body, use b2Body::GetNext to get
     /// the next body in the world list. A NULL body indicates the end of the list.
     /// @return the head of the world body list.
     pub fn get_body_list(&self) -> Option<Body> {
-        let ptr;
         unsafe {
-            ptr = b2World_GetBodyList(self.ptr);
-        }
+            let ptr = b2World_GetBodyList(self.ptr());
 
-        if ptr.is_null() {
-            None
-        } else {
-            Some(Body { ptr: ptr })
+            if ptr.is_null() {
+                None
+            } else {
+                Some(Body::from_raw(ptr))
+            }
         }
     }
 
@@ -111,15 +111,14 @@ impl World {
     /// list. A NULL particle-system indicates the end of the list.
     /// @return the head of the world particle-system list.
     pub fn get_particle_system_list(&self) -> Option<ParticleSystem> {
-        let ptr;
         unsafe {
-            ptr = b2World_GetParticleSystemList(self.ptr);
-        }
+            let ptr = b2World_GetParticleSystemList(self.ptr());
 
-        if ptr.is_null() {
-            None
-        } else {
-            Some(ParticleSystem { ptr: ptr })
+            if ptr.is_null() {
+                None
+            } else {
+                Some(ParticleSystem::from_raw(ptr))
+            }
         }
     }
 
@@ -136,7 +135,7 @@ impl World {
 	/// @param positionIterations for the position constraint solver.
 	/// @param particleIterations for the particle simulation.
     pub fn step_particle(&mut self, time_step: Float32, velocity_iterations: Int32, position_iterations: Int32, particle_iterations: Int32) {
-        unsafe { b2World_StepParticle(self.ptr, time_step, velocity_iterations, position_iterations, particle_iterations) }
+        unsafe { b2World_StepParticle(self.ptr(), time_step, velocity_iterations, position_iterations, particle_iterations) }
     }
 
     /// Take a time step. This performs collision detection, integration,
@@ -146,7 +145,7 @@ impl World {
     /// @param positionIterations for the position constraint solver.
     pub fn step(&mut self, time_step: f32, velocity_iterations: i32, position_iterations: i32) {
         unsafe {
-            b2World_Step(self.ptr, time_step, velocity_iterations, position_iterations);
+            b2World_Step(self.ptr(), time_step, velocity_iterations, position_iterations);
         }
     }
 
@@ -156,7 +155,7 @@ impl World {
 	/// Programmer's Guide for details.
 	/// @param timeStep is the value to be passed into `Step`.
     pub fn calculate_reasonable_particle_iterations(&self, time_step: Float32) -> Int32 {
-        unsafe { b2World_CalculateReasonableParticleIterations(self.ptr, time_step) }
+        unsafe { b2World_CalculateReasonableParticleIterations(self.ptr(), time_step) }
     }
 
     /// Ray-cast the world for all fixtures in the path of the ray. Your callback
@@ -170,17 +169,17 @@ impl World {
         let mut glue = RayCastCallbackGlue::new();
         glue.use_with(callback);
 
-        unsafe { b2World_RayCast(self.ptr, glue.ptr, point1, point2) }
+        unsafe { b2World_RayCast(self.ptr(), glue.ptr(), point1, point2) }
     }
 
     /// Change the global gravity vector.
     pub fn set_gravity(&mut self, gravity: &Vec2) {
-    	unsafe { b2World_SetGravity(self.ptr, gravity) }
+    	unsafe { b2World_SetGravity(self.ptr(), gravity) }
     }
 
     /// Get the global gravity vector.
     pub fn get_gravity(&mut self) -> Vec2 {
-    	unsafe { b2World_GetGravity(self.ptr) }
+    	unsafe { b2World_GetGravity(self.ptr()) }
     }
 
 }
@@ -188,7 +187,7 @@ impl World {
 impl Drop for World {
     fn drop(&mut self) {
         unsafe {
-            b2World_Delete(self.ptr);
+            b2World_Delete(self.ptr());
         }
     }
 }

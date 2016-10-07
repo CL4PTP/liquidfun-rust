@@ -69,19 +69,21 @@ impl Default for WeldJointDef {
 impl JointDef<WeldJoint> for WeldJointDef {
 	fn joint_type() -> JointType { JointType::WeldJoint }
 
-	fn create(&self, world: &mut World) -> WeldJoint {
-		unsafe { WeldJoint { ptr: b2WeldJoint_Create(
-			world.ptr,
-			self.user_data,
-			if let Some(ref p) = self.body_a { p.ptr } else { ptr::null_mut() },
-		    if let Some(ref p) = self.body_b { p.ptr } else { ptr::null_mut() },
-		    self.collide_connected,
-			self.local_anchor_a,
-			self.local_anchor_b,
-			self.reference_angle,
-			self.frequency_hz,
-			self.damping_ratio,
-		) } }
+	fn create(&mut self, world: &mut World) -> WeldJoint {
+		unsafe {
+			WeldJoint::from_raw(b2WeldJoint_Create(
+				world.ptr(),
+				self.user_data,
+				if let Some(ref mut p) = self.body_a { p.ptr() } else { ptr::null_mut() },
+			    if let Some(ref mut p) = self.body_b { p.ptr() } else { ptr::null_mut() },
+			    self.collide_connected,
+				self.local_anchor_a,
+				self.local_anchor_b,
+				self.reference_angle,
+				self.frequency_hz,
+				self.damping_ratio,
+			))
+		}
 	}
 }
 
@@ -112,49 +114,57 @@ extern {
 
 #[derive(Clone, Debug)]
 pub struct WeldJoint {
-	pub ptr: *mut B2WeldJoint
+	raw: *mut B2WeldJoint,
 }
 
 impl WeldJoint {
+	pub unsafe fn from_raw(raw: *mut B2WeldJoint) -> Self {
+		WeldJoint { raw: raw }
+	}
+
+	pub unsafe fn ptr(&self) -> *mut B2WeldJoint {
+		self.raw
+	}
+
 	pub fn get_local_anchor_a(&self) -> &Vec2 {
-		unsafe { b2WeldJoint_GetLocalAnchorA(self.ptr) }
+		unsafe { b2WeldJoint_GetLocalAnchorA(self.ptr()) }
 	}
 
 	pub fn get_local_anchor_b(&self) -> &Vec2 {
-		unsafe { b2WeldJoint_GetLocalAnchorB(self.ptr) }
+		unsafe { b2WeldJoint_GetLocalAnchorB(self.ptr()) }
 	}
 
 	pub fn get_reference_angle(&self) -> Float32 {
-		unsafe { b2WeldJoint_GetReferenceAngle(self.ptr) }
+		unsafe { b2WeldJoint_GetReferenceAngle(self.ptr()) }
 	}
 
 	pub fn set_frequency(&self, hz: Float32) {
-		unsafe { b2WeldJoint_SetFrequency(self.ptr, hz) }
+		unsafe { b2WeldJoint_SetFrequency(self.ptr(), hz) }
 	}
 
 	pub fn get_frequency(&self) -> Float32 {
-		unsafe { b2WeldJoint_GetFrequency(self.ptr) }
+		unsafe { b2WeldJoint_GetFrequency(self.ptr()) }
 	}
 
 	pub fn set_damping_ratio(&self, ratio: Float32) {
-		unsafe { b2WeldJoint_SetDampingRatio(self.ptr, ratio) }
+		unsafe { b2WeldJoint_SetDampingRatio(self.ptr(), ratio) }
 	}
 
 	pub fn get_damping_ratio(&self) -> Float32 {
-		unsafe { b2WeldJoint_GetDampingRatio(self.ptr) }
+		unsafe { b2WeldJoint_GetDampingRatio(self.ptr()) }
 	}
 
 }
 
 impl Joint for WeldJoint {
 	fn get_handle(&self) -> *mut B2Joint {
-		self.ptr as *mut B2Joint
+		unsafe { self.ptr() as *mut _ }
 	}
 
 	fn get_next(&self) -> Self
 	{
 		unsafe {
-			WeldJoint { ptr: b2Joint_GetNext(self.get_handle()) as *mut _ }
+			WeldJoint::from_raw(b2Joint_GetNext(self.get_handle()) as *mut _)
 		}
 	}
 }

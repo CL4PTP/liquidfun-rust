@@ -66,17 +66,19 @@ impl<J1, J2> JointDef<GearJoint> for GearJointDef<J1, J2>
 {
 	fn joint_type() -> JointType { JointType::GearJoint }
 
-	fn create(&self, world: &mut World) -> GearJoint {
-		unsafe { GearJoint { ptr: b2GearJoint_Create(
-			world.ptr,
-			self.user_data,
-			if let Some(ref p) = self.body_a { p.ptr } else { ptr::null_mut() },
-		    if let Some(ref p) = self.body_b { p.ptr } else { ptr::null_mut() },
-		    self.collide_connected,
-            if let Some(ref p) = self.joint1 { p.get_handle() } else { ptr::null_mut() },
-        	if let Some(ref p) = self.joint2 { p.get_handle() } else { ptr::null_mut() },
-        	self.ratio,
-		) } }
+	fn create(&mut self, world: &mut World) -> GearJoint {
+		unsafe {
+            GearJoint::from_raw(b2GearJoint_Create(
+    			world.ptr(),
+    			self.user_data,
+    			if let Some(ref mut p) = self.body_a { p.ptr() } else { ptr::null_mut() },
+    		    if let Some(ref mut p) = self.body_b { p.ptr() } else { ptr::null_mut() },
+    		    self.collide_connected,
+                if let Some(ref p) = self.joint1 { p.get_handle() } else { ptr::null_mut() },
+            	if let Some(ref p) = self.joint2 { p.get_handle() } else { ptr::null_mut() },
+            	self.ratio,
+    		))
+        }
 	}
 }
 
@@ -102,36 +104,44 @@ extern {
 
 #[derive(Clone, Debug)]
 pub struct GearJoint {
-	pub ptr: *mut B2GearJoint
+	raw: *mut B2GearJoint,
 }
 
 impl GearJoint {
+	pub unsafe fn from_raw(raw: *mut B2GearJoint) -> Self {
+		GearJoint { raw: raw }
+	}
+
+	pub unsafe fn ptr(&self) -> *mut B2GearJoint {
+		self.raw
+	}
+
     pub fn get_joint1(&self) -> *mut B2Joint {
-        unsafe { b2GearJoint_GetJoint1(self.ptr) }
+        unsafe { b2GearJoint_GetJoint1(self.ptr()) }
     }
 
 	pub fn get_joint2(&self) -> *mut B2Joint {
-        unsafe { b2GearJoint_GetJoint2(self.ptr) }
+        unsafe { b2GearJoint_GetJoint2(self.ptr()) }
     }
 
 	pub fn set_ratio(&self, ratio: Float32) {
-        unsafe { b2GearJoint_SetRatio(self.ptr, ratio) }
+        unsafe { b2GearJoint_SetRatio(self.ptr(), ratio) }
     }
 
 	pub fn get_ratio(&self) -> Float32 {
-        unsafe { b2GearJoint_GetRatio(self.ptr) }
+        unsafe { b2GearJoint_GetRatio(self.ptr()) }
     }
 }
 
 impl Joint for GearJoint {
 	fn get_handle(&self) -> *mut B2Joint {
-		self.ptr as *mut B2Joint
+		unsafe { self.ptr() as *mut _ }
 	}
 
 	fn get_next(&self) -> Self
 	{
 		unsafe {
-			GearJoint { ptr: b2Joint_GetNext(self.get_handle()) as *mut _ }
+			GearJoint::from_raw(b2Joint_GetNext(self.get_handle()) as *mut _)
 		}
 	}
 }

@@ -62,17 +62,19 @@ impl Default for RopeJointDef {
 impl JointDef<RopeJoint> for RopeJointDef {
 	fn joint_type() -> JointType { JointType::RopeJoint }
 
-	fn create(&self, world: &mut World) -> RopeJoint {
-		unsafe { RopeJoint { ptr: b2RopeJoint_Create(
-			world.ptr,
-			self.user_data,
-			if let Some(ref p) = self.body_a { p.ptr } else { ptr::null_mut() },
-		    if let Some(ref p) = self.body_b { p.ptr } else { ptr::null_mut() },
-		    self.collide_connected,
-			self.local_anchor_a,
-			self.local_anchor_b,
-			self.max_length,
-		) } }
+	fn create(&mut self, world: &mut World) -> RopeJoint {
+		unsafe {
+			RopeJoint::from_raw(b2RopeJoint_Create(
+				world.ptr(),
+				self.user_data,
+				if let Some(ref mut p) = self.body_a { p.ptr() } else { ptr::null_mut() },
+			    if let Some(ref mut p) = self.body_b { p.ptr() } else { ptr::null_mut() },
+			    self.collide_connected,
+				self.local_anchor_a,
+				self.local_anchor_b,
+				self.max_length,
+			))
+		}
 	}
 }
 
@@ -99,41 +101,49 @@ extern {
 
 #[derive(Clone, Debug)]
 pub struct RopeJoint {
-	pub ptr: *mut B2RopeJoint
+	raw: *mut B2RopeJoint,
 }
 
 impl RopeJoint {
+	pub unsafe fn from_raw(raw: *mut B2RopeJoint) -> Self {
+		RopeJoint { raw: raw }
+	}
+
+	pub unsafe fn ptr(&self) -> *mut B2RopeJoint {
+		self.raw
+	}
+
 	pub fn get_local_anchor_a(&self) -> &Vec2 {
-		unsafe { b2RopeJoint_GetLocalAnchorA(self.ptr) }
+		unsafe { b2RopeJoint_GetLocalAnchorA(self.ptr()) }
 	}
 
 	pub fn get_local_anchor_b(&self) -> &Vec2 {
-		unsafe { b2RopeJoint_GetLocalAnchorB(self.ptr) }
+		unsafe { b2RopeJoint_GetLocalAnchorB(self.ptr()) }
 	}
 
 	pub fn set_max_length(&self, length: Float32) {
-		unsafe { b2RopeJoint_SetMaxLength(self.ptr, length) }
+		unsafe { b2RopeJoint_SetMaxLength(self.ptr(), length) }
 	}
 
 	pub fn get_max_length(&self) -> Float32 {
-		unsafe { b2RopeJoint_GetMaxLength(self.ptr) }
+		unsafe { b2RopeJoint_GetMaxLength(self.ptr()) }
 	}
 
 	pub fn get_limit_state(&self) -> LimitState {
-		unsafe { b2RopeJoint_GetLimitState(self.ptr) }
+		unsafe { b2RopeJoint_GetLimitState(self.ptr()) }
 	}
 
 }
 
 impl Joint for RopeJoint {
 	fn get_handle(&self) -> *mut B2Joint {
-		self.ptr as *mut B2Joint
+		unsafe { self.ptr() as *mut _ }
 	}
 
 	fn get_next(&self) -> Self
 	{
 		unsafe {
-			RopeJoint { ptr: b2Joint_GetNext(self.get_handle()) as *mut _ }
+			RopeJoint::from_raw(b2Joint_GetNext(self.get_handle()) as *mut _)
 		}
 	}
 }

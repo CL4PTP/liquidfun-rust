@@ -3,7 +3,7 @@ use super::shape::*;
 use super::super::super::common::math::*;
 use super::super::super::common::settings::*;
 
-enum B2ChainShape {}
+pub enum B2ChainShape {}
 
 extern {
     fn b2ChainShape_Delete(ptr: *mut B2ChainShape);
@@ -22,31 +22,36 @@ extern {
 /// Connectivity information is used to create smooth collisions.
 /// WARNING: The chain will not collide properly if there are self-intersections.
 pub struct ChainShape {
-    ptr: *mut B2ChainShape,
+    raw: *mut B2ChainShape,
     owned: bool,
 }
 
 /// Cast a ChainShape from a B2Shape.
 pub fn from_shape(ptr: *mut B2Shape) -> ChainShape {
-    ChainShape { ptr: ptr as *mut B2ChainShape, owned: false}
+    unsafe { ChainShape::from_raw(ptr as *mut _, false) }
 }
 
 impl Shape for ChainShape {
-    // Is the up-cast even necessary? Can't we just use self.ptr directly?
+    // Is the up-cast even necessary? Can't we just use  directly?
     fn handle(&self) -> *mut B2Shape {
         unsafe {
-            b2ChainShape_Upcast(self.ptr)
+            b2ChainShape_Upcast(self.ptr())
         }
     }
 }
 
 impl ChainShape {
+	pub unsafe fn from_raw(raw: *mut B2ChainShape, owned: bool) -> Self {
+		ChainShape { raw: raw, owned: owned }
+	}
+
+	pub unsafe fn ptr(&self) -> *mut B2ChainShape {
+		self.raw
+	}
 
     /// Create a new ChainShape.
     pub fn new() -> ChainShape {
-        unsafe {
-            ChainShape { ptr: b2ChainShape_New(), owned: true }
-        }
+        unsafe { ChainShape::from_raw(b2ChainShape_New(), true) }
     }
 
 	/// Create a chain with isolated end vertices.
@@ -54,28 +59,24 @@ impl ChainShape {
 	/// @param count the vertex count
     pub fn create_chain(&mut self, vertices: &[Vec2]) {
     	unsafe {
-    		b2ChainShape_CreateChain(self.ptr, vertices.as_ptr(), vertices.len() as _);
+    		b2ChainShape_CreateChain(self.ptr(), vertices.as_ptr(), vertices.len() as _);
     	}
     }
 
 	/// @see b2Shape::GetChildCount
     pub fn get_child_count(&self) -> i32 {
-        unsafe {
-            b2ChainShape_GetChildCount(self.ptr)
-        }
+        unsafe { b2ChainShape_GetChildCount(self.ptr()) }
     }
 
 	/// The vertex count.
  	pub fn get_vertex_count(&self) -> i32 {
-        unsafe {
-            b2ChainShape_m_count(self.ptr)
-        }
+        unsafe { b2ChainShape_m_count(self.ptr()) }
     }
 
 	/// The vertices. Owned by this class.
  	pub fn get_vertices(&self) -> &[Vec2] {
         unsafe {
-			slice::from_raw_parts(b2ChainShape_m_vertices(self.ptr), self.get_vertex_count() as usize)
+			slice::from_raw_parts(b2ChainShape_m_vertices(self.ptr()), self.get_vertex_count() as usize)
         }
     }
 
@@ -85,9 +86,7 @@ impl ChainShape {
 impl Drop for ChainShape {
     fn drop(&mut self) {
         if self.owned {
-            unsafe {
-                b2ChainShape_Delete(self.ptr);
-            }
+            unsafe { b2ChainShape_Delete(self.ptr()); }
         }
     }
 }

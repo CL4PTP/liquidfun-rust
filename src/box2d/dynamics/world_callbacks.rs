@@ -70,11 +70,11 @@ impl<F> RayCastCallback for F
     }
 
     fn report_particle(&mut self, particle_system: ParticleSystem, index: Int32, point: &Vec2, normal: &Vec2, fraction: Float32) -> Float32 {
-        default_report_particle(particle_system.ptr, index, point, normal, fraction)
+        default_report_particle(unsafe { particle_system.ptr() }, index, point, normal, fraction)
     }
 
     fn should_query_particle_system(&mut self, particle_system: ParticleSystem) -> bool {
-        default_should_query_particle_system(particle_system.ptr)
+        default_should_query_particle_system(unsafe { particle_system.ptr() })
     }
 }
 
@@ -97,17 +97,25 @@ impl<RFF, RPF, SQF> RayCastCallback for (RFF, RPF, SQF)
 }
 
 pub struct RayCastCallbackGlue {
-	pub ptr: *mut B2RayCastCallback,
+	raw: *mut B2RayCastCallback,
 }
 
 impl RayCastCallbackGlue {
+	pub unsafe fn from_raw(raw: *mut B2RayCastCallback) -> Self {
+		RayCastCallbackGlue { raw: raw }
+	}
+
+	pub unsafe fn ptr(&self) -> *mut B2RayCastCallback {
+		self.raw
+	}
+
     pub fn new() -> Self {
-        unsafe { RayCastCallbackGlue { ptr: b2RayCastCallback_New(), } }
+        unsafe { RayCastCallbackGlue::from_raw(b2RayCastCallback_New()) }
     }
 
     pub fn use_with<C: RayCastCallback>(&mut self, callback: &mut C) {
         unsafe {
-            b2RayCastCallback_Bind(self.ptr,
+            b2RayCastCallback_Bind(self.ptr(),
                 callback as *mut _ as *mut _,
                 ray_cast_callback_report_fixture::<C>,
                 ray_cast_callback_report_particle::<C>,
@@ -119,7 +127,7 @@ impl RayCastCallbackGlue {
 
 impl Drop for RayCastCallbackGlue {
     fn drop(&mut self) {
-        unsafe { b2RayCastCallback_Delete(self.ptr) }
+        unsafe { b2RayCastCallback_Delete(self.ptr()) }
     }
 }
 
@@ -134,7 +142,7 @@ fn default_should_query_particle_system(_particle_system: *const B2ParticleSyste
 
 unsafe extern "C" fn ray_cast_callback_report_fixture<C: RayCastCallback>(c_object: *const c_void, fixture: *const B2Fixture, point: &Vec2, normal: &Vec2, fraction: Float32) -> Float32 {
     let callback = mem::transmute::<_, &mut C>(c_object);
-    let fixture = Fixture { ptr: fixture as *mut _ };
+    let fixture = Fixture::from_raw(fixture as *mut _);
 
     callback.report_fixture(fixture, point, normal, fraction)
 }
@@ -142,7 +150,7 @@ unsafe extern "C" fn ray_cast_callback_report_fixture<C: RayCastCallback>(c_obje
 #[allow(non_snake_case)]
 unsafe extern "C" fn ray_cast_callback_report_particle<C: RayCastCallback>(c_object: *const c_void, particle_system: *const B2ParticleSystem, index: Int32, point: &Vec2, normal: &Vec2, fraction: Float32) -> Float32 {
     let callback = mem::transmute::<_, &mut C>(c_object);
-    let particle_system = ParticleSystem { ptr: particle_system as *mut _ };
+    let particle_system = ParticleSystem::from_raw(particle_system as *mut _);
 
     callback.report_particle(particle_system, index, point, normal, fraction)
 }
@@ -150,7 +158,7 @@ unsafe extern "C" fn ray_cast_callback_report_particle<C: RayCastCallback>(c_obj
 #[allow(non_snake_case)]
 unsafe extern "C" fn ray_cast_callback_should_query_particle_system<C: RayCastCallback>(c_object: *const c_void, particle_system: *const B2ParticleSystem) -> bool {
     let callback = mem::transmute::<_, &mut C>(c_object);
-    let particle_system = ParticleSystem { ptr: particle_system as *mut _ };
+    let particle_system = ParticleSystem::from_raw(particle_system as *mut _);
 
     callback.should_query_particle_system(particle_system)
 }
@@ -240,17 +248,25 @@ pub trait ContactListener {
 
 #[derive(Clone, Debug)]
 pub struct ContactListenerGlue {
-    pub ptr: *mut B2ContactListener,
+    raw: *mut B2ContactListener,
 }
 
 impl ContactListenerGlue {
+	pub unsafe fn from_raw(raw: *mut B2ContactListener) -> Self {
+		ContactListenerGlue { raw: raw }
+	}
+
+	pub unsafe fn ptr(&self) -> *mut B2ContactListener {
+		self.raw
+	}
+
     pub fn new() -> Self {
-        unsafe { ContactListenerGlue { ptr: b2ContactListener_New(), } }
+        unsafe { ContactListenerGlue::from_raw(b2ContactListener_New()) }
     }
 
     pub fn use_with<C: ContactListener>(&mut self, callback: &mut C) {
         unsafe {
-            b2ContactListener_Bind(self.ptr,
+            b2ContactListener_Bind(self.ptr(),
                 callback as *mut _ as *mut _,
                 contact_listener_begin_fixture_fixture::<C>,
                 contact_listener_end_fixture_fixture::<C>,
@@ -267,64 +283,64 @@ impl ContactListenerGlue {
 
 impl Drop for ContactListenerGlue {
     fn drop(&mut self) {
-        unsafe { b2ContactListener_Delete(self.ptr) }
+        unsafe { b2ContactListener_Delete(self.ptr()) }
     }
 }
 
 unsafe extern "C" fn contact_listener_begin_fixture_fixture<C: ContactListener>(c_object: *const c_void, contact: *const B2Contact) {
     let callback = mem::transmute::<_, &mut C>(c_object);
-    let contact = Contact { ptr: contact as *mut _ };
+    let contact = Contact::from_raw(contact as *mut _);
 
     callback.begin_fixture_fixture(contact);
 }
 
 unsafe extern "C" fn contact_listener_end_fixture_fixture<C: ContactListener>(c_object: *const c_void, contact: *const B2Contact) {
     let callback = mem::transmute::<_, &mut C>(c_object);
-    let contact = Contact { ptr: contact as *mut _ };
+    let contact = Contact::from_raw(contact as *mut _);
 
     callback.end_fixture_fixture(contact);
 }
 
 unsafe extern "C" fn contact_listener_begin_particle_fixture<C: ContactListener>(c_object: *const c_void, particle_system: *const B2ParticleSystem, particle_body_contact: *const ParticleBodyContact) {
     let callback = mem::transmute::<_, &mut C>(c_object);
-    let particle_system = ParticleSystem { ptr: particle_system as *mut _ };
+    let particle_system = ParticleSystem::from_raw(particle_system as *mut _);
 
     callback.begin_particle_fixture(particle_system, &*particle_body_contact);
 }
 
 unsafe extern "C" fn contact_listener_end_particle_fixture<C: ContactListener>(c_object: *const c_void, fixture: *const B2Fixture, particle_system: *const B2ParticleSystem, index: Int32) {
     let callback = mem::transmute::<_, &mut C>(c_object);
-    let fixture = Fixture { ptr: fixture as *mut _ };
-    let particle_system = ParticleSystem { ptr: particle_system as *mut _ };
+    let fixture = Fixture::from_raw(fixture as *mut _);
+    let particle_system = ParticleSystem::from_raw(particle_system as *mut _);
 
     callback.end_particle_fixture(fixture, particle_system, index);
 }
 
 unsafe extern "C" fn contact_listener_begin_particle_particle<C: ContactListener>(c_object: *const c_void, particle_system: *const B2ParticleSystem, particle_contact: *const B2ParticleContact) {
     let callback = mem::transmute::<_, &mut C>(c_object);
-    let particle_system = ParticleSystem { ptr: particle_system as *mut _ };
-    let particle_contact = ParticleContact { ptr: particle_contact as *mut _ };
+    let particle_system = ParticleSystem::from_raw(particle_system as *mut _);
+    let particle_contact = ParticleContact::from_raw(particle_contact as *mut _);
 
     callback.begin_particle_particle(particle_system, particle_contact);
 }
 
 unsafe extern "C" fn contact_listener_end_particle_particle<C: ContactListener>(c_object: *const c_void, particle_system: *const B2ParticleSystem, index_a: Int32, index_b: Int32) {
     let callback = mem::transmute::<_, &mut C>(c_object);
-    let particle_system = ParticleSystem { ptr: particle_system as *mut _ };
+    let particle_system = ParticleSystem::from_raw(particle_system as *mut _);
 
     callback.end_particle_particle(particle_system, index_a, index_b);
 }
 
 unsafe extern "C" fn contact_listener_pre_solve<C: ContactListener>(c_object: *const c_void, contact: *const B2Contact, old_manifold: *const Manifold) {
     let callback = mem::transmute::<_, &mut C>(c_object);
-    let contact = Contact { ptr: contact as *mut _ };
+    let contact = Contact::from_raw(contact as *mut _);
 
     callback.pre_solve(contact, &*old_manifold);
 }
 
 unsafe extern "C" fn contact_listener_post_solve<C: ContactListener>(c_object: *const c_void, contact: *const B2Contact, impulse: *const ContactImpulse) {
     let callback = mem::transmute::<_, &mut C>(c_object);
-    let contact = Contact { ptr: contact as *mut _ };
+    let contact = Contact::from_raw(contact as *mut _);
 
     callback.post_solve(contact, &*impulse);
 }
